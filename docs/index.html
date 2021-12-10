@@ -4,21 +4,19 @@
 <script src="lsc.min.js"></script>
 <script>
 function updateInfo(){
-	document.getElementById('uri').innerText=window.location.href;
 	document.getElementById('history').innerText=LSC.instance.getHistoryIndex();
 	document.getElementById('cache').innerText=JSON.stringify(Array.from(LSC.instance.getCache().entries()),null,"\t");
 }
 LSC.events.addEventListener('navigate',updateInfo);
 </script>
 </head>
-<body onload="let now=new Date();LSC('example',(new Date(now.getFullYear(),now.getMonth(),now.getDate()))/1000,true);updateInfo();">
+<body onload="let now=new Date();LSC('example',(new Date(now.getFullYear(),now.getMonth(),now.getDate()))/1000,true).then(()=>updateInfo());">
 <h1>index.html</h1>
 <ul>
 <li><a href="1.html">Link 1</a>
 <li><a href="2.html" data-noprefetch>Link 2</a>
 </ul>
 <h2>Current LSC cache</h2>
-<p>URI: <span id="uri"></span></p>
 <p>History index: <span id="history"></span></p>
 <pre id="cache"></pre>
 </body>
