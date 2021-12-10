@@ -1,0 +1,26 @@
+name: Push actions
+on: [push]
+jobs:
+  Push-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Copy JS
+        run: | 
+          cp -u -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/docs/lsc.js
+          cp -u -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/WordPress/lsc.js
+    
+      - name: Minify CSS/JS
+        uses: nizarmah/auto-minify@v2.1.1
+        
+      - name: Create WordPress plugin
+        run: |
+          rm -f ${GITHUB_WORKSPACE}/WordPress/lsc.zip
+          zip -9 ${GITHUB_WORKSPACE}/WordPress/lsc.zip ${GITHUB_WORKSPACE}/WordPress/*
+    
+      - name: Committing modified files
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Github Action: Push actions"
+          branch: ${{ github.ref }}
