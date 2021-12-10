@@ -4,9 +4,9 @@
 <script src="lsc.min.js"></script>
 <script>
 function updateInfo(){
-	document.getElementById('uri').innerHTML=window.location.href;
-	document.getElementById('history').innerHTML=LSC.instance.getHistoryIndex();
-	document.getElementById('cache').innerHTML=JSON.stringify(Array.from(LSC.instance.getCache().entries()),null,"\t");
+	document.getElementById('uri').innerText=window.location.href;
+	document.getElementById('history').innerText=LSC.instance.getHistoryIndex();
+	document.getElementById('cache').innerText=JSON.stringify(Array.from(LSC.instance.getCache().entries()),null,"\t");
 }
 LSC.events.addEventListener('navigate',updateInfo);
 </script>
