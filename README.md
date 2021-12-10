@@ -2,7 +2,7 @@
 
 This handy JavaScript will cache the HTML of URIs that have been fetched from your domain in the `localStorage` of the browser and use that cached HTML next time that URIs are requested from a link. This can make many multipage websites appear super fast, like it's a single-page-app (which will become almost true with LSC) :)
 
-**NOTE**: Because LSC uses heavy caching, less requests will be sent to your webserver, which can affect statistics from the webserver's logfile.
+**NOTE**: Because LSC uses heavy caching, less or more requests will be sent to your webserver, which can affect the statistics from the webserver's logfile.
 
 ## Usage
 
