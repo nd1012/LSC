@@ -6,13 +6,12 @@
 function updateInfo(){
 	document.getElementById('uri').innerHTML=window.location.href;
 	document.getElementById('history').innerHTML=LSC.instance.getHistoryIndex();
-	document.getElementById('cache').innerHTML=JSON.stringify(LSC.instance.getCache().entries());
+	document.getElementById('cache').innerHTML=JSON.stringify(LSC.instance.getCache().entries(),null,"\t");
 }
-LSC.events.addEventListener('load',updateInfo);
 LSC.events.addEventListener('navigate',updateInfo);
 </script>
 </head>
-<body onload="let now=new Date();LSC('example',(new Date(now.getFullYear(),now.getMonth(),now.getDate()))/1000,true);">
+<body onload="let now=new Date();LSC('example',(new Date(now.getFullYear(),now.getMonth(),now.getDate()))/1000,true);updateInfo();">
 <h1>1.html</h1>
 <ul>
 <li><a href="index.html">Link to the index</a>
