@@ -4,6 +4,7 @@ jobs:
   Push-Actions:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout branch
       - uses: actions/checkout@v2
       
       - name: Copy files
@@ -15,14 +16,14 @@ jobs:
       - name: Minify CSS/JS
         uses: nizarmah/auto-minify@v2.1.1
         
-      - name: Create WordPress plugin
+      - name: Finalize WordPress plugin
         run: |
           cd ${GITHUB_WORKSPACE}/WordPress
           rm -f lsc.zip
           zip -9 -D -T lsc.zip *
     
-      - name: Committing modified files
+      - name: Commit modified files
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "Github Action: Push actions"
+          commit_message: "GitHub action: Push actions"
           branch: ${{ github.ref }}
