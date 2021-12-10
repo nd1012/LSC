@@ -209,3 +209,7 @@ LSC tries to convert a multipage website to a single-page-app that renders each 
 The same problem exists with the `beforeunload` and `unload` DOM events. Here you may attach to the `beforenavigate` event of the `LSC.events` object instead.
 
 For websites that rely heavy on JavaScript that depends on the normal page initialization events the browser sends usually, this may not be a solution :(
+
+## WordPress plugin
+
+LSC is also available as [WordPress plugin](WordPress/README.md).
