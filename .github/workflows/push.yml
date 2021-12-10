@@ -19,7 +19,7 @@ jobs:
         run: |
           cd ${GITHUB_WORKSPACE}/WordPress
           rm -f lsc.zip
-          zip -9 lsc.zip *
+          zip -9 -D -T lsc.zip *
     
       - name: Committing modified files
         uses: stefanzweifel/git-auto-commit-action@v4
