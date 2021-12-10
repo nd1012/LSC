@@ -163,6 +163,7 @@ The `LSC.events` object can raise these events:
 - `beforenavigate`: Before navigating to a new URI (can't be cancelled)
 - `navigated`: After navigated to a new URI
 - `update`: After fetched HTML for an URI (and before storing it in the cache - the `html` in the event object may be manipulated)
+- `updated`: After a fetched HTML has been written to the cache
 - `clear`: After cleared/initialized the cache map
 - `store`: Before storing the cache to the `localStorage` (you may modify the cache before writing to the storage)
 - `history`: After navigated in the browser history

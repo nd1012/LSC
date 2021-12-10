@@ -8,7 +8,7 @@ function updateInfo(){
 	document.getElementById('cache').innerText=JSON.stringify(Array.from(LSC.instance.getCache().entries()),null,"\t");
 }
 LSC.events.addEventListener('navigate',updateInfo);
-LSC.events.addEventListener('update',updateInfo);
+LSC.events.addEventListener('updated',updateInfo);
 </script>
 </head>
 <body onload="let now=new Date();LSC('example',(new Date(now.getFullYear(),now.getMonth(),now.getDate()))/1000,true).then(()=>updateInfo());">

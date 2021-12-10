@@ -127,6 +127,7 @@ if(typeof window.LSC=='undefined'){
 				debugger;
 			}
 			cache.set(uri,e.detail.html);
+			LSC.events.dispatchEvent(new CustomEvent('updated',{detail:{uri:uri,html:e.detail.html}}));
 			return e.detail.html;
 		}
 		
