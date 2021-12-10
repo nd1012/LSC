@@ -13,7 +13,7 @@ if(basename($_SERVER['SCRIPT_FILENAME'])==basename(__FILE__)) exit;
 
 // Add the JavaScript to the page
 function lsc_js(){
-	if(is_admin()) return;
+	if(is_admin()||!get_option('lsc_load',true)) return;
 	include __DIR__.(get_option('lsc_min',true)?'/lsc.min.js':'/lsc.js');
 	$name=get_option('lsc_cache_name',null);
 	$version=intval(get_option('lsc_version',0));
@@ -49,8 +49,13 @@ if(is_admin()||current_user_can('administrator')){
 <?php
 		settings_fields('lsc');
 ?><h2>Configuration</h2>
+<p>Disable automatic LSC loading, if you plan to integrate the required HTML by yourself (in your DIY theme, f.e.).</p>
 <p>If you won't provide a cache name, LSC will use the domain of your website. If you leave the site version &lt;1, LSC will use the current date and time, which will cache the current session, but renew the cache on the next page visit or reload.</p>
 <table class="form-table">
+<tr valign="top">
+<th scope="row">Load LSC</th>
+<td><label for="lsc_load"><input type="checkbox" name="lsc_load" id="lsc_load" value="1" <?php echo get_option('lsc_load',true)?'checked':''; ?> /> Automatic load LSC</label></td>
+</tr>
 <tr valign="top">
 <th scope="row"><label for="lsc_cache_name">Cache name</label></th>
 <td><input type="text" name="lsc_cache_name" maxlength="64" id="lsc_cache_name" pattern="[a-z|A-Z|0-9|\-|\.]*" value="<?php echo esc_attr(get_option('lsc_cache_name','')); ?>" size="40" class="regular-text" /></td>
