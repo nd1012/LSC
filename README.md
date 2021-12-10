@@ -212,4 +212,4 @@ For websites that rely heavy on JavaScript that depends on the normal page initi
 
 ## WordPress plugin
 
-LSC is also available as [WordPress plugin](WordPress/README.md).
+LSC is also available as [WordPress plugin](WordPress/).
