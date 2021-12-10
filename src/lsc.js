@@ -1,6 +1,6 @@
 if(typeof window.LSC=='undefined'){
 	// LSC object
-	window.LSC=async function(key,version,preFetch){
+	window.LSC=async (key,version,preFetch)=>{
 		// This is a singleton object!
 		if(typeof window.LSC!='undefined'&&LSC.instance){
 			if(typeof key!='undefined'&&key!=LSC.instance.getKey()) throw new Error('Can not change LSC cache key');

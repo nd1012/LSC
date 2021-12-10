@@ -1,13 +1,13 @@
 if(typeof window.LSC=='undefined'){
 	// LSC object
-	window.LSC=function(key,version,preFetch){
+	window.LSC=async (key,version,preFetch)=>{
 		// This is a singleton object!
 		if(typeof window.LSC!='undefined'&&LSC.instance){
 			if(typeof key!='undefined'&&key!=LSC.instance.getKey()) throw new Error('Can not change LSC cache key');
 			if(version&&version>LSC.instance.getCacheVersion()){
 				console.debug('Initialize newer LSC cache version',version);
-				LSC.instance.clear(version)
-					.set(window.location.href,document.querySelector('html').innerHTML);// Ensure the initial HTML is in the cache
+				LSC.instance.clear(version);
+				await LSC.instance.get(window.location.href);// Ensure the initial HTML is in the cache
 			}
 			return LSC.instance;
 		}
@@ -171,7 +171,7 @@ if(typeof window.LSC=='undefined'){
 		if(!cache||(version&&cache.get('version')<+version)) this.clear(version);
 		document.body.addEventListener('beforeunload',this.store);
 		history.replaceState('LSC0',document.title,document.location.href);// Required to manage the history entry of the initial page
-		cache.set(document.location.href,document.querySelector('html').innerHTML);// Ensure the initial HTML is in the cache
+		await this.get(document.location.href);// Ensure the initial HTML is in the cache
 		window.addEventListener('popstate',async (e)=>{
 			// Handle browser history navigation
 				// New URI
