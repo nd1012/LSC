@@ -6,10 +6,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
-      - name: Copy JS
+      - name: Copy files
         run: | 
-          cp -u -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/docs/lsc.js
-          cp -u -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/WordPress/lsc.js
+          cp -u -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/docs/
+          cp -u -f ${GITHUB_WORKSPACE}/LICENSE ${GITHUB_WORKSPACE}/WordPress/
+          cp -u -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/WordPress/
     
       - name: Minify CSS/JS
         uses: nizarmah/auto-minify@v2.1.1
