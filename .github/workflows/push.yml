@@ -17,8 +17,9 @@ jobs:
         
       - name: Create WordPress plugin
         run: |
-          rm -f ${GITHUB_WORKSPACE}/WordPress/lsc.zip
-          zip -9 ${GITHUB_WORKSPACE}/WordPress/lsc.zip ${GITHUB_WORKSPACE}/WordPress/*
+          cd ${GITHUB_WORKSPACE}/WordPress
+          rm -f lsc.zip
+          zip -9 lsc.zip *
     
       - name: Committing modified files
         uses: stefanzweifel/git-auto-commit-action@v4
