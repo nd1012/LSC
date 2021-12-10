@@ -168,16 +168,6 @@ The `LSC.events` object can raise these events:
 - `history`: After navigated in the browser history
 - `load`: LSC initialized (raised only once for the singleton instance)
 
-## Issues with the browser cache
-
-LSC uses the `fetch` method to fetch HTML from the server, which may use the browser cache. That means, if you clear the LSC cache, but you still get old file versions when reloading, this is an effect of the browser cache (even when browsing in private mode). To ensure that you see the latest HTML, you need to
-
-- clear the LSC cache with `LSC.instance.clear(LSC.instance.getCacheVersion());` (`Enter`) (open the JavaScript console with `F12` or `Shift+Ctrl+I`)
-- clear the browser cache (somewhere at `Settings` -> `Privacy` -> `Browser data`), be sure to select the temporary data
-- reload the page (`Ctrl+R`)
-
-This could be difficult for guests on your website. For this reason, you should configure your app or webserver properly for sending correct cache response headers using reasonable timeouts.
-
 ## Automatic renewal of browser caches
 
 You could force an automatic renewal of the LSC cache, if you use an automatic version when initializing LSC. For example, you could use the Unix timestamp of the current day as version number to ensure that tomorrow all browsers will reload HTML contents from your webserver - example:
@@ -190,6 +180,16 @@ You could force an automatic renewal of the LSC cache, if you use an automatic v
 
 Per default LSC uses the current Unix timestamp for the cache version, if you didn't give a value. This has the effect that the `localStorage` cache will be reloaded every time a guest (re)loads your website, but it will keep the cache during his stay.
 
+## Issues with the browser cache
+
+LSC uses the `fetch` method to fetch HTML from the server, which may use the browser cache. That means, if you clear the LSC cache, but you still get old file versions when reloading, this is an effect of the browser cache (even when browsing in private mode). To ensure that you see the latest HTML, you need to
+
+- clear the LSC cache with `LSC.instance.clear(LSC.instance.getCacheVersion());` (`Enter`) (open the JavaScript console with `F12` or `Shift+Ctrl+I`)
+- clear the browser cache (somewhere at `Settings` -> `Privacy` -> `Browser data`), be sure to select the temporary data
+- reload the page (`Ctrl+R`)
+
+This could be difficult for guests on your website. For this reason, you should configure your app or webserver properly for sending correct cache response headers using reasonable timeouts.
+
 ## Issues with the `localStorage` available space
 
 The `localStorage` has different limits for every operating system and browser, and the user is able to configure a different size, too. That means, the available size of the `localStorage` is not reliable and this may cause an error, when LSC is trying to write more data to the `localStorage` than space is available.
@@ -197,3 +197,12 @@ The `localStorage` has different limits for every operating system and browser, 
 In my experience the `localStorage` should actually serve up to 5 MB of data, which is a lot, and may be more than enough for many websites already.
 
 If the cached data becomes too big for storing in the `localStorage`, LSC will clear the cache and start over.
+
+## Known issues/limitations
+
+LSC tries to convert a multipage website to a single-page-app that renders each pages HTML from the managed `localStorage` cache. To support the browser history it's required to stay within the same document context while displaying the HTML of different pages. For this reason the page initialization events `DOMContentLoaded`, `readystatechanged` and `load` will be raised only once, when loading the initial page. This may cause problems with initialization JavaScript that you want to run for every page. There are two work-arounds for this issue:
+
+1. Use the `onload` attribute of the HTML `body` tag to place initialization JavaScript for a page (don't use `attachEventListener` for this). LCS will execute the script, if the attribute was found.
+2. Attach to the `load` and `navigate` event of the `LSC.events` object to run code on the first initialization and every time the HTML of another page was displayed.
+
+For websites that rely heavy on JavaScript that depends on the normal page initialization events the browser sends usually, this may not be a solution :(
