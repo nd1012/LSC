@@ -205,4 +205,6 @@ LSC tries to convert a multipage website to a single-page-app that renders each 
 1. Use the `onload` attribute of the HTML `body` tag to place initialization JavaScript for a page (don't use `attachEventListener` for this). LCS will execute the script, if the attribute was found.
 2. Attach to the `load` and `navigate` event of the `LSC.events` object to run code on the first initialization and every time the HTML of another page was displayed.
 
+The same problem exists with the `beforeunload` and `unload` DOM events. Here you may attach to the `beforenavigate` event of the `LSC.events` object instead.
+
 For websites that rely heavy on JavaScript that depends on the normal page initialization events the browser sends usually, this may not be a solution :(
