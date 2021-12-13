@@ -23,9 +23,13 @@ if(typeof window.LSC=='undefined'){
 		// Prepare the cache
 		if(typeof key=='undefined'||key==null) key=document.location.hostname;
 			// Cache
-		var cache=typeof localStorage.getItem(key)=='string'?new Map(JSON.parse(localStorage.getItem(key))):null,
+		var cache=typeof (LSC.options.useSessionStorage?sessionStorage:localStorage).getItem(key)=='string'
+				?new Map(JSON.parse(localStorage.getItem(key)))
+				:null,
 			// History index
-			historyIndex=0;
+			historyIndex=0,
+			// Session storage?
+			useSessionStorage=LSC.options.useSessionStorage;
 		
 		// Handle a link click
 		const click=(e)=>{
@@ -77,6 +81,18 @@ if(typeof window.LSC=='undefined'){
 		// Get the current history index
 		this.getHistoryIndex=()=>historyIndex;
 		
+		// Get if using the session storage
+		this.getSessionStorage=()=>seessionStorage;
+		
+		// Set if using the sessionStorage and store the current cache to the current store to use
+		this.setSessionStorage=(activate)=>{
+			if(activate==useSessionStorage) return self;
+			useSessionStorage=activate;
+			if(useSessionStorage&&localStorage.getItem(key)!=null) localStorage.removeItem(key);
+			self.store(true);
+			return self;
+		};
+		
 		// Navigate to an URI
 		this.navigate=async (uri,noState,index)=>{
 			console.debug('LSC navigate to "'+uri+'"',noState,index);
@@ -87,29 +103,39 @@ if(typeof window.LSC=='undefined'){
 				// HTML of the URI
 				html=await self.get(uri);
 			LSC.events.dispatchEvent(new CustomEvent('beforenavigate',{detail:{uri:uri,noState:noState,oldUri:oldUri,history:historyIndex}}));
-			document.querySelector('html').innerHTML=html;
-			if(!noState){
-				// Add a new history entry
-				if(hasIndex){
-					historyIndex=index;
-				}else{
-					historyIndex++;
+			if(LSC.options.history){
+				// Support browser history
+				document.querySelector('html').innerHTML=html;
+				if(!noState){
+					// Add a new history entry
+					if(hasIndex){
+						historyIndex=index;
+					}else{
+						historyIndex++;
+					}
+					history.pushState('LSC'+historyIndex,document.title,uri);
+				}else if(historyIndex||hasIndex){
+					// Go back in history
+					if(hasIndex){
+						historyIndex=index;
+					}else{
+						historyIndex--;
+					}
 				}
-				history.pushState('LSC'+historyIndex,document.title,uri);
-			}else if(historyIndex||hasIndex){
-				// Go back in history
-				if(hasIndex){
-					historyIndex=index;
-				}else{
-					historyIndex--;
-				}
+			}else{
+				// Create a new document
+				historyIndex=0;
+				document.write(html);
+				document.close();
 			}
 			manageLinks();
-				// Document body
-			const body=document.querySelector('body');
-			if(body&&body.hasAttribute('onload'))
-				// Execute the body onload script
-				(new Function('event',body.getAttribute('onload')))(new Event('load'));
+			if(LSC.options.history){
+				// Execute the body onload script, if exists
+					// Document body
+				const body=document.querySelector('body');
+				if(body&&body.hasAttribute('onload'))
+					(new Function('event',body.getAttribute('onload')))(new Event('load'));
+			}
 			LSC.events.dispatchEvent(new CustomEvent('navigated',{detail:{uri:uri,noState:noState,oldUri:oldUri,history:historyIndex}}));
 			return html;
 		};
@@ -125,6 +151,7 @@ if(typeof window.LSC=='undefined'){
 			if(typeof e.detail.html!='string'){
 				console.warn('LSC failed to fetch HTML from "'+uri+'"',e);
 				debugger;
+				return cache.get(uri);
 			}
 			cache.set(uri,e.detail.html);
 			LSC.events.dispatchEvent(new CustomEvent('updated',{detail:{uri:uri,html:e.detail.html}}));
@@ -152,10 +179,10 @@ if(typeof window.LSC=='undefined'){
 			try{
 				console.trace('Store LSC cache',notClear);
 				LSC.events.dispatchEvent(new CustomEvent('store',{detail:{cache:cache}}));
-				localStorage.setItem(key,JSON.stringify(Array.from(cache.entries())));
+				(useSessionStorage?sessionStorage:localStorage).setItem(key,JSON.stringify(Array.from(cache.entries())));
 			}catch(e){
 				if(notClear){
-					// Avoid endless recursion
+					// Avoid stack overflow by endless recursion
 					console.error('Failed to store the LSC cache',e);
 					debugger;
 				}else{
@@ -175,6 +202,7 @@ if(typeof window.LSC=='undefined'){
 		await this.get(document.location.href);// Ensure the initial HTML is in the cache
 		window.addEventListener('popstate',async (e)=>{
 			// Handle browser history navigation
+			if(!LSC.options.history) return;
 				// New URI
 			const uri=window.location.href,
 				// New history index
@@ -199,4 +227,12 @@ if(typeof window.LSC=='undefined'){
 	
 	// Supported URI extensions
 	LSC.extensions=['html','htm','php'];
+
+	// LSC options	
+	LSC.options={
+		// If false, browser history won't be supported, but instead DOM events would be raised as usual again
+		history:true,
+		// If true, the sessionStorage will be used instead of the localStorage
+		useSessionStorage:false
+	};
 }

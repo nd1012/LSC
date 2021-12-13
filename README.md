@@ -155,6 +155,20 @@ LSC(LSC.instance.getKey(),2);
 
 **NOTE**: The key needs to be the current cache name, and the version needs to be decreased (increasing has no effect). The pre-fetching behavior can't be changed from the initial state.
 
+#### Get is using the session storage
+
+```js
+console.log(LSC.instance.getSessionStorage());
+```
+
+#### Set if using the session storage
+
+```js
+LSC.instance.setSessionStorage(true);// Use sessionStorage instead of localStorage
+```
+
+This will store the current cache to the current storage to use. If you switch to the `sessionStorage`, the cache would be deleted from the `localStorage`.
+
 ### Events
 
 The `LSC.events` object can raise these events:
@@ -209,6 +223,22 @@ LSC tries to convert a multipage website to a single-page-app that renders each 
 The same problem exists with the `beforeunload` and `unload` DOM events. Here you may attach to the `beforenavigate` event of the `LSC.events` object instead.
 
 For websites that rely heavy on JavaScript that depends on the normal page initialization events the browser sends usually, this may not be a solution :(
+
+## Use `sessionStorage` instead of `localStorage`
+
+The `localStorage` isn't good for storing sensitive data, but the `sessionStorage` will be deleted, as soon as the window (tab) closes. If you prefer to use the `sessionStorage` instead of the `localStorage`, you can set to use the `sessionStorage` on startup:
+
+```js
+LSC.options.useSessionStorage=true;
+```
+
+To switch between `localStorage` and `sessionStorage` later:
+
+```js
+LSC.instance.setSessionStorage(true|false);
+```
+
+If you've used the `localStorage` before, the cache will be deleted from that storage, when you switch to the `sessionStorage`.
 
 ## WordPress plugin
 
