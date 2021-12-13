@@ -13,17 +13,25 @@ This handy JavaScript will cache the HTML of URIs that have been fetched from yo
 
 	<head>
 	
-		<!-- Load the LSC JavaScript -->
+		<!-- Load the LSC JavaScript from your websites JS location -->
 		<script src="lsc.min.js"></script>
+		<!-- ...or from a CDN service -->
+		<!-- <script src="https://cdn.jsdelivr.net/gh/nd1012/LSC/src/lsc.min.js"></script> -->
+		
+		<!-- Configure and run LSC -->
 		<script>
+		
 		// Per default html, htm and php are supported - add more extensions to handle here
 		LSC.extensions.push('md');
+		
+		// Run LSC in the window load event
+		window.addEventListener('load',()=>LSC('cacheName',1,true));
+		
 		</script>
 		
 	</head>
 	
-	<!-- Run LSC in the body's load event -->
-	<body onload="LSC('cacheName',1,true);">
+	<body>
 	
 		<!-- External links won't be managed -->
 		<a href="https://google.com">This link to Google won't be managed</a>
