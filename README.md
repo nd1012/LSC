@@ -155,7 +155,7 @@ LSC(LSC.instance.getKey(),2);
 
 **NOTE**: The key needs to be the current cache name, and the version needs to be decreased (increasing has no effect). The pre-fetching behavior can't be changed from the initial state.
 
-#### Get is using the session storage
+#### Get if using the session storage
 
 ```js
 console.log(LSC.instance.getSessionStorage());
@@ -182,6 +182,7 @@ The `LSC.events` object can raise these events:
 - `store`: Before storing the cache to the `localStorage` (you may modify the cache before writing to the storage)
 - `history`: After navigated in the browser history
 - `load`: LSC initialized (raised only once for the singleton instance)
+- `error`: Failed to fetch an URI
 
 ## Automatic renewal of browser caches
 

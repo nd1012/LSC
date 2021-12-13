@@ -69,7 +69,7 @@ This will simply output the version number.
 ### Increase the current LSC site version number
 
 ```
-https://uri.to/wp-content/plugins/lsc/lcs.php?lsc_action=increaseversion&lsc_token=...
+https://uri.to/wp-content/plugins/lsc/lsc.php?lsc_action=increaseversion&lsc_token=...
 ```
 
 The pre-defined webservice token from the plugin settings needs to be used as value in the `lsc_token` parameter. The version number will be increased by one.

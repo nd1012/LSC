@@ -1,3 +1,4 @@
+// https://github.com/nd1012/LSC
 if(typeof window.LSC=='undefined'){
 	// LSC object
 	window.LSC=async (key,version,preFetch)=>{
@@ -150,6 +151,7 @@ if(typeof window.LSC=='undefined'){
 			LSC.events.dispatchEvent(e);
 			if(typeof e.detail.html!='string'){
 				console.warn('LSC failed to fetch HTML from "'+uri+'"',e);
+				LSC.events.dispatchEvent(new CustomEvent('error',{detail:{uri:uri,html:e.detail.html}}));
 				debugger;
 				return cache.get(uri);
 			}
