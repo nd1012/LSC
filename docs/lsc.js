@@ -27,7 +27,7 @@ if(typeof window.LSC=='undefined'){
 		if(typeof key=='undefined'||key==null) key=document.location.hostname;
 			// Cache
 		var cache=typeof (LSC.options.useSessionStorage?sessionStorage:localStorage).getItem(key)=='string'
-				?new Map(JSON.parse(localStorage.getItem(key)))
+				?new Map(JSON.parse((LSC.options.useSessionStorage?sessionStorage:localStorage).getItem(key)))
 				:null,
 			// History index
 			historyIndex=0,
