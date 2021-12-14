@@ -75,6 +75,18 @@ Find an online demonstration [here](https://nd1012.github.io/LSC/index.html).
 
 **NOTE**: If you defined an event handler in the `body` html tag's `onload` attribute, on each navigation the handler will be executed, but the `load` event won't fire as usual - which means: If you used `addEventListener` to attach to the `load` event etc., they won't be called. Attach to the `navigate` event on the `LSC.events` object instead. Other events (like `beforeunload`, `unload`, `DOMContentLoaded`, `readystatechanged` etc.) will be omitted. For `unload` you can attach to the `beforenavigate` event in the `LSC.events` object.
 
+### Try it first!
+
+Before you start to include LSC into your website, please make sure that it works, and identify possible problems. To do that you can simply use your browsers developer tools (the JavaScript console) by pressing `F12` or `Shift+Ctrl+I` and entering these JavaScript commands after you browsed to your website:
+
+```js
+var script=document.createElement('script');
+script.src='https://cdn.jsdelivr.net/gh/nd1012/LSC/src/lsc.js';
+document.querySelector('head').appendChild(script);
+// Wait for the resource to be loaded (watch the `Network` tab)
+LSC('test',1,true).then(()=>alert('LSC is ready!'));
+```
+
 ### Pre-fetching
 
 The pre-fetching of URIs from the current page will be done in the background and shouldn't disturb the user. If pre-fetching is disabled, HTML will be loaded on demand. For each page, even for each link you can decide, if you want pre-fetch the URI(s) or not.
