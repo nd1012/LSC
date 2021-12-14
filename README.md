@@ -80,10 +80,15 @@ Find an online demonstration [here](https://nd1012.github.io/LSC/index.html).
 Before you start to include LSC into your website, please make sure that it works, and identify possible problems. To do that you can simply use your browsers developer tools (the JavaScript console) by pressing `F12` or `Shift+Ctrl+I` and entering these JavaScript commands after you browsed to your website:
 
 ```js
+// Load LSC
 var script=document.createElement('script');
 script.src='https://cdn.jsdelivr.net/gh/nd1012/LSC/src/lsc.js';
 document.querySelector('head').appendChild(script);
-// Wait for the resource to be loaded (watch the `Network` tab)
+// Wait for the resource to be loaded (watch the "Network" tab)
+
+// Do any LSC configuration that you want to do here
+
+// Run LSC
 LSC('test',1,true).then(()=>alert('LSC is ready!'));
 ```
 
