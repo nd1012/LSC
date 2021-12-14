@@ -218,6 +218,16 @@ LSC.options.maxEntries=100;
 
 This limit will affect the max. number of pre-fetched managed links per page, and the max. number of cached entries. If the cache is full, and a new URI is going to be fetched, the oldest entry will be deleted from the cache to fit the limitation.
 
+#### Limit the number of concurrent fetch-actions
+
+To avoid self-DoS your own server, the number of concurrent fetch-actions should be limited (to a maximum of `5` by default). To change this value:
+
+```js
+LSC.options.maxConcurrentFetch=10;
+```
+
+An users navigation action has priority and would ignore this limit (otherwise the user navigation would block until some fetch-actions finished!).
+
 ### Events
 
 The `LSC.events` object can raise these events:

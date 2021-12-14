@@ -79,6 +79,7 @@ function lsc_js($force=false){
 	$quiet=!!get_option('lsc_quiet',false);
 	$max=intval(get_option('lsc_max',0));
 	$exclude=lsc_exclude_uris();
+	$limit=intval(get_option('lsc_limit',5));
 	?><script>
 if(window.LSC&&!LSC.instance){
 <?php
@@ -102,7 +103,8 @@ if(window.LSC&&!LSC.instance){
 	?>	LSC.exclude.push(...<?php echo json_encode($exclude); ?>);
 <?php
 	endif;// End exclude URIs
-	?>	window.addEventListener(
+	?>	LSC.options.maxConcurrentFetch=<?php echo $limit; ?>;
+	window.addEventListener(
 		'load',
 		async ()=>await LSC(
 			<?php echo $name==''?'null':'"'.preg_quote($name,'"').'"'; ?>,
@@ -168,6 +170,7 @@ function lsc_admin_init(){
 		'lsc_extensions'=>'',
 		'lsc_quiet'=>false,
 		'lsc_max'=>0,
+		'lsc_limit'=>5
 	);
 	foreach($defaults as $option=>$def){
 		register_setting('lsc',$option);
@@ -335,6 +338,10 @@ If the browser history is unmanaged, the browsers URI will stay the initial URI 
 <tr valign="top">
 <th scope="row"><label for="lsc_max">Max. # of cached entries</label></th>
 <td><input type="number" min="0" name="lsc_max" id="lsc_max" value="<?php echo esc_attr(get_option('lsc_max','0')); ?>" size="20" class="regular-text" /></td>
+</tr>
+<tr valign="top">
+<th scope="row"><label for="lsc_limit">Concurrent fetch limit</label></th>
+<td><input type="number" min="1" max="20" name="lsc_limit" id="lsc_limit" value="<?php echo esc_attr(get_option('lsc_limit','5')); ?>" size="20" class="regular-text" /></td>
 </tr>
 <tr valign="top">
 <th scope="row"><label for="lsc_token">Webservice token</label></th>
