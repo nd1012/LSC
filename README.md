@@ -4,6 +4,40 @@ This handy JavaScript will cache the HTML of URIs that have been fetched from yo
 
 **NOTE**: Because LSC uses heavy caching, less or more requests will be sent to your webserver, which can affect the statistics from the webserver's logfile.
 
+## Table of contents
+
+- [Usage](#usage)
+	- [Try it first!](#try-it-first)
+	- [Pre-fetching](#pre-fetching)
+	- [JavaScript console actions](#javascript-console-actions)
+		- [Clear the current LSC cache](#clear-the-current-lsc-cache)
+		- [Store the current LSC cache to the `localStorage`](#store-the-current-lsc-cache-to-the-localstorage)
+		- [Navigate to an URI (that will be cached or loaded from the LSC cache)](#navigate-to-an-uri-that-will-be-cached-or-loaded-from-the-lsc-cache)
+		- [Get cached HTML, or request HTML from the server and update the LSC cache](#get-cached-html-or-request-html-from-the-server-and-update-the-lsc-cache)
+		- [Request HTML from the server and update the LSC cache](#request-html-from-the-server-and-update-the-lsc-cache)
+		- [Get the current LSC cache](#get-the-current-lsc-cache)
+		- [Get the current LSC cache key](#get-the-current-lsc-cache-key)
+		- [Get the current LSC cache version](#get-the-current-lsc-cache-version)
+		- [Get the current LSC navigation history index](#get-the-current-lsc-navigation-history-index)
+		- [Initialize the LSC cache with a new version after initialized during runtime](#initialize-the-lsc-cache-with-a-new-version-after-initialized-during-runtime)
+		- [Get if using the session storage](#get-if-using-the-session-storage)
+		- [Set if using the session storage](#set-if-using-the-session-storage)
+		- [Be quiet](#be-quiet)
+		- [Temporary disable](#temporary-disable)
+		- [Change managed link selector](#change-managed-link-selector)
+		- [Exclude link URIs](#exclude-link-uris)
+		- [Limit the number of cached entries](#limit-the-number-of-cached-entries)
+		- [Limit the number of concurrent fetch-actions](#limit-the-number-of-concurrent-fetch-actions)
+	- [Events](#events)
+- [Automatic renewal of browser caches](#automatic-renewal-of-browser-caches)
+- [Issues with the browser cache](#issues-with-the-browser-cache)
+- [Issues with the `localStorage` available space](#issues-with-the-localstorage-available-space)
+- [Known issues/limitations](#known-issues-limitations)
+- [Use `sessionStorage` instead of `localStorage`](#use-sessionstorage-instead-of-localstorage)
+- [Extended usage for caching any key/value pairs](#extended-usage-for-caching-any-key-value-pairs)
+- [Good to know](#good-to-know)
+- [WordPress plugin](#wordpress-plugin)
+
 ## Usage
 
 ```html
