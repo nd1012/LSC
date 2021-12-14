@@ -247,6 +247,22 @@ window.addEventListener('load',async ()=>{
 
 Per default LSC uses the current Unix timestamp for the cache version, if you didn't give a value. This has the effect that the `localStorage` cache will be reloaded every time a guest (re)loads your website, but it will keep the cache during his stay.
 
+Another option could be to manage the site version in a `version.txt` file on your webspace, which simply contains the current version number that you update each time your site changes:
+
+```js
+window.addEventListener('load',async ()=>{
+	await LSC('cacheName',parseInt(await (await fetch('version.txt')).text()),true);
+});
+```
+
+In this case your browsers cache would come in effect - to avoid that:
+
+```js
+window.addEventListener('load',async ()=>{
+	await LSC('cacheName',parseInt(await (await fetch('version.txt?noCache='+(new Date()))).text()),true);
+});
+```
+
 ## Issues with the browser cache
 
 LSC uses the `fetch` method to fetch HTML from the server, which may use the browser cache. That means, if you clear the LSC cache, but you still get old file versions when reloading, this is an effect of the browser cache (even when browsing in private mode). To ensure that you see the latest HTML, you need to
