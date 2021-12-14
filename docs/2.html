@@ -9,9 +9,14 @@ function updateInfo(){
 }
 LSC.events.addEventListener('navigate',updateInfo);
 LSC.events.addEventListener('updated',updateInfo);
+window.addEventListener('load',async ()=>{
+	let now=new Date();
+	await LSC('example',(new Date(now.getFullYear(),now.getMonth(),now.getDate()))/1000,true);
+	updateInfo();
+});
 </script>
 </head>
-<body onload="let now=new Date();LSC('example',(new Date(now.getFullYear(),now.getMonth(),now.getDate()))/1000,true).then(()=>updateInfo());">
+<body>
 <h1>2.html</h1>
 <ul>
 <li><a href="index.html">Link to the index</a>

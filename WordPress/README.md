@@ -1,7 +1,5 @@
 # JavaScript `localStorage` Cache WordPress Plugin
 
-**CAUTION**: __BETA__ version!
-
 1. Use the `lsc.zip` to upload and install the plugin in your WordPress site using the WordPress administration web interface (`Plugins` -> `Install` -> `Upload plugin`)
 2. Activate the plugin in the WordPress administration web interface at `Plugins` -> `LSC` -> `Activate`
 3. Configure the plugin in the WordPress administration web interface at `Settings` -> `LSC`
@@ -54,6 +52,33 @@ A secret string that can be used as token to call protected webservice functiona
 
 This is a comma separated list of additional URI file extensions to manage. Per default `html`, `htm` and `php` are managed - add any additional extensions as required.
 
+### Quiet
+
+Activate the quiet mode, if you want LSC to log only errors, warnings and debug messages to the JavaScript console.
+
+### Exclude URIs
+
+You have to options to define link URIs to exclude from LSC management:
+
+1. Enter an URI to exclude the URI and all it's contents
+2. Enter a regular expression (use `/`  as delimiter) to match an URI to exclude
+
+Examples:
+
+```
+https://uri.to/excluded/content/
+```
+
+This will exclude the URI path `content` and all its contents.
+
+```
+/\/cache\//i
+```
+
+This will exclude all URIs that contain the pattern `cache` (with ignoring the character case).
+
+Up to 100 exclude rules may be defined.
+
 ## Webservive
 
 The plugin itself `https://uri.to/wp-content/plugins/lsc/lcs.php` does export a simple webservice:
@@ -74,7 +99,6 @@ https://uri.to/wp-content/plugins/lsc/lsc.php?lsc_action=increaseversion&lsc_tok
 
 The pre-defined webservice token from the plugin settings needs to be used as value in the `lsc_token` parameter. The version number will be increased by one.
 
-## TODO
+## Compatibility
 
-- [x] Automatic website versioning by watching updates in the WordPress environment
-- [ ] Tests with WordPress default themes
+LSC has been tested with the latest three standard WordPress (5.8) themes (Twenty Twenty-One, ...). But since there is a huge number of other themes and plugins, there's no guarantee that LSC will work with all of them - I'd say it's very likely that there are a number of themes and plugins out there which are definitely incompatible with LSC. Try and error!

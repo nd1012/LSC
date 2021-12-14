@@ -1,0 +1,33 @@
+name: Release actions
+on:
+    push:
+        tags:
+            - 'v*'
+jobs:
+    Release-Actions:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout branch
+              uses: actions/checkout@v2
+
+            - name: Create release
+              uses: actions/create-release@v1
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                tag_name: ${{ github.ref }}
+                release_name: Release ${{ github.ref }}
+                draft: false
+                prerelease: false
+            
+            - name: Add WordPress plugin download to release
+              uses: actions/upload-release-asset@v1
+              env:
+                GITHUB_TOKEN: ${{ github.token }}
+              with:
+                tag_name: ${{ github.ref }}
+                
+                upload_url: ${{ steps.create_release.outputs.upload_url }}
+                args: ${GITHUB_WORKSPACE}/WordPress/lsc.zip
+                asset_name: lsc.zip
+                asset_content_type: application/zip

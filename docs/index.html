@@ -9,17 +9,30 @@ function updateInfo(){
 }
 LSC.events.addEventListener('navigate',updateInfo);
 LSC.events.addEventListener('updated',updateInfo);
+window.addEventListener('load',async ()=>{
+	let now=new Date();
+	await LSC('example',(new Date(now.getFullYear(),now.getMonth(),now.getDate()))/1000,true);
+	updateInfo();
+});
 </script>
 </head>
-<body onload="let now=new Date();LSC('example',(new Date(now.getFullYear(),now.getMonth(),now.getDate()))/1000,true).then(()=>updateInfo());">
+<body>
 <h1>index.html</h1>
+<p>This demonstration configuration is:</p>
+<ol>
+<li>The minified LSC JavaScript is being used
+<li>The todays Unix timestamp is used as cache version number (the cache will refresh on the next day)
+<li>Pre-fetching the linked content is enabled in general, but disabled for "Link 2"
+</ol>
+<p>Have a look at the current LSC cache: The contents of this page and "Link 1" are cached already, while pre-fetching "Link 2" has been disabled, and so its contents are missing in the cache for now. As soon as you open "Link 2", LSC will cache the content and hold it as long as the cache version wasn't changed. You're welcome to open the JavaScript console and try the functionality that is described on the projects GitHub page. Use the browsers forward and back buttons to see how and when the history index changes.</p>
+<p>Links:</p>
 <ul>
 <li><a href="1.html">Link 1</a>
 <li><a href="2.html" data-noprefetch>Link 2</a>
 </ul>
 <h2>Current LSC cache</h2>
 <p><a href="javascript:updateInfo();">Update displayed information</a>
-<p>History index: <span id="history"></span></p>
+<p>Browser history index: <span id="history"></span></p>
 <pre id="cache"></pre>
 </body>
 </html>

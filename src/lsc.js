@@ -19,7 +19,9 @@ if(typeof window.LSC=='undefined'){
 			// Regular expression to match a link URI to manage
 			rx=new RegExp('^[^\:]+\:\/\/'+document.location.hostname.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(\/.*)?$','i'),
 			// Regular expression to match the file extension in an URI
-			extRx=/^.+\.([^\.|\/]+)$/;
+			extRx=/^.+\.([^\.|\/]+)$/,
+			// Regular expression to test for an URI path without a filename
+			noExtRx=/\/$/;
 		
 		// Prepare the cache
 		if(typeof key=='undefined'||key==null) key=document.location.hostname;
@@ -33,37 +35,74 @@ if(typeof window.LSC=='undefined'){
 			useSessionStorage=LSC.options.useSessionStorage;
 		
 		// Handle a link click
-		const click=(e)=>{
+		const click=async (e)=>{
 			console.debug('LSC handle link click',e);
+			if(!LSC.options.enable){
+				console.debug('LSC disabled');
+				return;
+			}
 			e.preventDefault();
-			self.navigate(e.target.href);
+			await self.navigate(e.target.href);
+		};
+		
+		// Determine if an URI is excluded
+		const isExcluded=(uri)=>{
+			for(let ex in LSC.excluded)
+				if(ex instanceof RegEx){
+					if(ex.test(uri)) return true;
+				}else if(uri.substring(0,ex.length)==ex){
+					return true;
+				}
+			return false;
 		};
 		
 		// Add click handler to managed link elements
 		const manageLinks=()=>{
+			if(!LSC.extensions.length) return [];// Link management was disabled
 				// Current document
 			const html=document.querySelector('html'),
 				// Managed extensions
 				extensions=LSC.extensions,
 				// Managed link elements
 				managed=[];
-			for(let [,a] of document.querySelectorAll('a:not([target])').entries()){
+				// "beforemanage" event object
+			let e;
+			for(let [,a] of document.querySelectorAll(LSC.selector).entries()){
 				if(
 					a.href.indexOf('?')<0&&// No GET parameters
 					a.href.indexOf('#')<0&&// No anchor
 					rx.test(a.href)&&// URI of the current domain
-					extRx.test(a.href)&&// Has an extension
-					extensions.indexOf(a.href.replace(extRx,"$1"))>-1// Extension is supported
+					(
+						noExtRx.test(a.href)||// Path without filename
+						(
+							extRx.test(a.href)&&// File with extension
+							extensions.indexOf(a.href.replace(extRx,"$1"))>-1)// File extension is supported
+						)&&
+					!isExcluded(a.href)// Not excluded
 					){
-					a.addEventListener('click',click);
-					managed.push(a);
+					console.debug('Manage link',a.href,a);
+					e=new CustomEvent('beforemanage',{detail:{link:a,manage:true,preFetch:true}});
+					LSC.events.dispatchEvent(e);
+					if(e.detail.manage){
+						// Manage
+						a.addEventListener('click',click);
+						a.setAttribute('data-lscmanaged',null);
+						managed.push(a);
+					}else{
+						// Event handler denied managing
+						console.debug('Event handler disabled link management',a);
+					}
 					// Pre-fetch the target URI's HTML
 					if(
+						e.detail.preFetch&&// Event handler didn't disable pre-fetching
+						(!LSC.options.maxEntries||LSC.options.maxEntries>managed.length)&&// Cache limit not exceeded
 						(preFetch||html.hasAttribute('data-prefetch')||a.hasAttribute('data-prefetch'))&&// Force pre-fetch
 						!html.hasAttribute('data-noprefetch')&&// Pre-fetch not denied for the document
 						!a.hasAttribute('data-noprefetch')// Pre-fetch not denied for the link
-						)
+						){
+						a.setAttribute('data-lscprefetched',null);
 						self.get(a.href);
+					}
 				}
 			}
 			LSC.events.dispatchEvent(new CustomEvent('manage',{detail:{html:html,extensions:extensions,managed:managed}}));
@@ -107,6 +146,7 @@ if(typeof window.LSC=='undefined'){
 			if(LSC.options.history){
 				// Support browser history
 				document.querySelector('html').innerHTML=html;
+				scrollTo(0,0);
 				if(!noState){
 					// Add a new history entry
 					if(hasIndex){
@@ -156,6 +196,12 @@ if(typeof window.LSC=='undefined'){
 				return cache.get(uri);
 			}
 			cache.set(uri,e.detail.html);
+			if(LSC.options.maxEntries&&cache.size>LSC.options.maxEntries+1){
+				// Unshift the cached entries to fit the max. number of cached entries
+				let keys=cache.keys();
+				keys.next();// Skip the version number key, which is the first key always!
+				cache.remove(keys.next().value);
+			}
 			LSC.events.dispatchEvent(new CustomEvent('updated',{detail:{uri:uri,html:e.detail.html}}));
 			return e.detail.html;
 		}
@@ -165,7 +211,7 @@ if(typeof window.LSC=='undefined'){
 		
 		// Clear the cache
 		this.clear=(version)=>{
-			console.trace('Clear LSC cache',version);
+			if(!LSC.options.quiet) console.trace('Clear LSC cache',version);
 			if(cache){
 				cache.clear();
 			}else{
@@ -179,7 +225,7 @@ if(typeof window.LSC=='undefined'){
 		// Store the cache
 		this.store=(notClear)=>{
 			try{
-				console.trace('Store LSC cache',notClear);
+				if(!LSC.options.quiet) console.trace('Store LSC cache',notClear);
 				LSC.events.dispatchEvent(new CustomEvent('store',{detail:{cache:cache}}));
 				(useSessionStorage?sessionStorage:localStorage).setItem(key,JSON.stringify(Array.from(cache.entries())));
 			}catch(e){
@@ -197,7 +243,7 @@ if(typeof window.LSC=='undefined'){
 		};
 	
 		// Construction code
-		console.log('LSC initializing',key,version,preFetch);
+		if(!LSC.options.quiet) console.log('LSC initializing',key,version,preFetch);
 		if(!cache||(version&&cache.get('version')<+version)) this.clear(version);
 		document.body.addEventListener('beforeunload',this.store);
 		history.replaceState('LSC0',document.title,document.location.href);// Required to manage the history entry of the initial page
@@ -227,14 +273,26 @@ if(typeof window.LSC=='undefined'){
 	// LSC events
 	LSC.events=new EventTarget();
 	
+	// Managed link selector
+	LSC.selector='a:not([target]):not([onclick]):not([data-lscunmanaged]),a[data-lscmanaged]';
+	
 	// Supported URI extensions
 	LSC.extensions=['html','htm','php'];
+	
+	// Excluded URIs or regular expressions
+	LSC.exclude=[];
 
 	// LSC options	
 	LSC.options={
+		// If false, LSC will stop handling managed link clicks, and the browser will continue with the normal behavior
+		enable:true,
+		// If true, nothing will be logged to the console (except warnings, errors and debug information (if you set the debug level to do so))
+		quiet:false,
 		// If false, browser history won't be supported, but instead DOM events would be raised as usual again
 		history:true,
 		// If true, the sessionStorage will be used instead of the localStorage
-		useSessionStorage:false
+		useSessionStorage:false,
+		// Maximum number of cached entries and managed pre-fetched links per page (zero for unlimited)
+		maxEntries:0
 	};
 }

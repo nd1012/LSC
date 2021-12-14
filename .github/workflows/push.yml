@@ -15,6 +15,8 @@ jobs:
     
       - name: Minify CSS/JS
         uses: nizarmah/auto-minify@v2.1.1
+        with:
+          maxdepth: 1
         
       - name: Finalize WordPress plugin
         run: |
