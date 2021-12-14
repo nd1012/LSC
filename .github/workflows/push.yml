@@ -9,9 +9,9 @@ jobs:
       
       - name: Copy files
         run: | 
-          cp -u -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/docs/
-          cp -u -f ${GITHUB_WORKSPACE}/LICENSE ${GITHUB_WORKSPACE}/WordPress/
-          cp -u -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/WordPress/
+          cp -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/docs/
+          cp -f ${GITHUB_WORKSPACE}/LICENSE ${GITHUB_WORKSPACE}/WordPress/
+          cp -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/WordPress/
     
       - name: Minify CSS/JS
         uses: nizarmah/auto-minify@v2.1.1
