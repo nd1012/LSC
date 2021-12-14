@@ -32,7 +32,9 @@ if(typeof window.LSC=='undefined'){
 			// History index
 			historyIndex=0,
 			// Session storage?
-			useSessionStorage=LSC.options.useSessionStorage;
+			useSessionStorage=LSC.options.useSessionStorage,
+			// Concurrent fetch-actions
+			fetching=new Map();
 		
 		// Handle a link click
 		const click=async (e)=>{
@@ -90,11 +92,12 @@ if(typeof window.LSC=='undefined'){
 						managed.push(a);
 					}else{
 						// Event handler denied managing
-						console.debug('Event handler disabled link management',a);
+						console.debug('Event handler disabled LSC link management',a);
 					}
 					// Pre-fetch the target URI's HTML
-					if(
-						e.detail.preFetch&&// Event handler didn't disable pre-fetching
+					if(!e.detail.preFetch){
+						console.debug('Event handler disabled LSC pre-fetching',a);
+					}else if(
 						(!LSC.options.maxEntries||LSC.options.maxEntries>managed.length)&&// Cache limit not exceeded
 						(preFetch||html.hasAttribute('data-prefetch')||a.hasAttribute('data-prefetch'))&&// Force pre-fetch
 						!html.hasAttribute('data-noprefetch')&&// Pre-fetch not denied for the document
@@ -141,7 +144,7 @@ if(typeof window.LSC=='undefined'){
 				// Was the index parameter given?
 				hasIndex=typeof index!='undefined',
 				// HTML of the URI
-				html=await self.get(uri);
+				html=await self.get(uri,true);
 			LSC.events.dispatchEvent(new CustomEvent('beforenavigate',{detail:{uri:uri,noState:noState,oldUri:oldUri,history:historyIndex}}));
 			if(LSC.options.history){
 				// Support browser history
@@ -182,32 +185,60 @@ if(typeof window.LSC=='undefined'){
 		};
 		
 		// Fetch an URI and update the cache
-		this.update=async (uri)=>{
+		this.update=async (uri,priority)=>{
 			console.debug('Update LSC cache for "'+uri+'"');
-				// HTML of the URI
-			const html=await (await fetch(uri)).text(),
-				// Event data
-				e=new CustomEvent('update',{detail:{uri:uri,html:html}});
-			LSC.events.dispatchEvent(e);
-			if(typeof e.detail.html!='string'){
-				console.warn('LSC failed to fetch HTML from "'+uri+'"',e);
-				LSC.events.dispatchEvent(new CustomEvent('error',{detail:{uri:uri,html:e.detail.html}}));
+			// Avoid double-fetching
+			if(!priority&&fetching.has(uri)){
+				console.debug('LSC avoid double-fetching "'+uri+'"');
+				await fetching.get(uri);
+				return cache.has(uri)?cache.get(uri):null;
+			}
+			// Avoid too many concurrent fetch-actions
+				// If we had to pause because of too many concurrent fetch-actions
+			var paused=false;
+			if(!priority&&fetching.size>=LSC.options.maxConcurrentFetch){
+				console.debug('Waiting for running concurrent LSC fetch-actions to finish ('+fetching.size+')',fetching);
+				for(paused=true;fetching.size>=LSC.options.maxConcurrentFetch;await fetching.entries().next().value[1]);
+				console.debug('Continue updating LSC cache for "'+uri+'"');
+			}
+				// Task resolve method
+			var resolve=null;
+			fetching.set(uri,new Promise((rm)=>resolve=rm));
+			// Fetch the HTML of the requested URI
+			try{
+					// HTML of the URI
+				const html=await (await fetch(uri)).text(),
+					// Event data
+					e=new CustomEvent('update',{detail:{uri:uri,html:html}});
+				LSC.events.dispatchEvent(e);
+				if(typeof e.detail.html!='string'){
+					console.warn('LSC failed to fetch HTML from "'+uri+'"',e);
+					LSC.events.dispatchEvent(new CustomEvent('error',{detail:{uri:uri,html:e.detail.html}}));
+					debugger;
+					return cache.get(uri);
+				}
+				cache.set(uri,e.detail.html);
+				if(LSC.options.maxEntries&&cache.size>LSC.options.maxEntries+1){
+					// Unshift the cached entries to fit the max. number of cached entries
+					let keys=cache.keys();
+					keys.next();// Skip the version number key, which is the first key always!
+					cache.delete(keys.next().value);
+				}
+				LSC.events.dispatchEvent(new CustomEvent('updated',{detail:{uri:uri,html:e.detail.html}}));
+				return e.detail.html;
+			}catch(ex){
+				console.error('Error updating LSC cache for "'+uri+'"',ex);
 				debugger;
 				return cache.get(uri);
+			}finally{
+				resolve();
+				fetching.delete(uri);
+				if(paused) console.debug('Finished updating LSC cache for "'+uri+'"');
 			}
-			cache.set(uri,e.detail.html);
-			if(LSC.options.maxEntries&&cache.size>LSC.options.maxEntries+1){
-				// Unshift the cached entries to fit the max. number of cached entries
-				let keys=cache.keys();
-				keys.next();// Skip the version number key, which is the first key always!
-				cache.remove(keys.next().value);
-			}
-			LSC.events.dispatchEvent(new CustomEvent('updated',{detail:{uri:uri,html:e.detail.html}}));
-			return e.detail.html;
 		}
 		
 		// Get an URI from the cache or fetch the URI and update the cache
-		this.get=async (uri)=>cache.has(uri)?cache.get(uri):await self.update(uri);
+		this.get=async (uri,priority)=>cache.has(uri)?cache.get(uri):await self.update(uri,priority);
 		
 		// Clear the cache
 		this.clear=(version)=>{
@@ -293,6 +324,8 @@ if(typeof window.LSC=='undefined'){
 		// If true, the sessionStorage will be used instead of the localStorage
 		useSessionStorage:false,
 		// Maximum number of cached entries and managed pre-fetched links per page (zero for unlimited)
-		maxEntries:0
+		maxEntries:0,
+		// Maximum number of concurrent fetch-actions
+		maxConcurrentFetch:5
 	};
 }
