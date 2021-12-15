@@ -1,4 +1,4 @@
-# JavaScript `localStorage` Cache
+# LSC - JavaScript `localStorage` Cache
 
 This handy JavaScript will cache the HTML of URIs that have been fetched from your domain in the `localStorage` of the browser and use that cached HTML next time that URIs are requested from a link. This can make many multipage websites appear super fast, like it's a single-page-app (which will become almost true with LSC) :)
 
@@ -9,6 +9,7 @@ This handy JavaScript will cache the HTML of URIs that have been fetched from yo
 - [Usage](#usage)
 	- [Try it first!](#try-it-first)
 	- [Pre-fetching](#pre-fetching)
+		- [Ethnical use](#ethnical-use)
 	- [JavaScript console actions](#javascript-console-actions)
 		- [Clear the current LSC cache](#clear-the-current-lsc-cache)
 		- [Store the current LSC cache to the `localStorage`](#store-the-current-lsc-cache-to-the-localstorage)
@@ -32,11 +33,12 @@ This handy JavaScript will cache the HTML of URIs that have been fetched from yo
 - [Automatic renewal of browser caches](#automatic-renewal-of-browser-caches)
 - [Issues with the browser cache](#issues-with-the-browser-cache)
 - [Issues with the `localStorage` available space](#issues-with-the-localstorage-available-space)
-- [Known issues/limitations](#known-issues-limitations)
+- [Known issues/limitations](#known-issueslimitations)
 - [Use `sessionStorage` instead of `localStorage`](#use-sessionstorage-instead-of-localstorage)
-- [Extended usage for caching any key/value pairs](#extended-usage-for-caching-any-key-value-pairs)
+- [Extended usage for caching any key/value pairs](#extended-usage-for-caching-any-keyvalue-pairs)
 - [Good to know](#good-to-know)
-- [WordPress plugin](#wordpress-plugin)
+- [Add-ons](#add-ons)
+- [Roadmap](#roadmap)
 
 ## Usage
 
@@ -147,6 +149,10 @@ To disable pre-fetching for a single link, add the `data-noprefetch` attribute t
 ```
 
 To enable pre-fetching for the document or a single link, add the `data-prefetch` attribute to the tag.
+
+#### Ethnical use
+
+Blind pre-fetching of all linked contents of a website leads to a huge traffic overload, which you may ignore, if it's not your own server that has to deliver the response. Please be sure to pre-fetch only contents which are very likely to be requested from an user. You could use a predicting engine f.e. to see which links the user may target with his mouse actions.
 
 ### JavaScript console actions
 
@@ -261,6 +267,17 @@ LSC.exclude.push('https://uri.to/excluded/content/');// Exclude a path and its c
 LSC.exclude.push(/\/cache\//);// Exclude "cache"-path and its contents recursive by regular expression
 ```
 
+**NOTE**: An exclude can be overridden from an include!
+
+#### Include link URIs
+
+```js
+LSC.exclude.push('https://uri.to/included/content/');// Include a path and its contents recursive
+LSC.exclude.push(/\/important\//);// Include "cache"-path and its contents recursive by regular expression
+```
+
+**NOTE**: An include would override an exclude!
+
 #### Limit the number of cached entries
 
 ```js
@@ -294,6 +311,7 @@ The `LSC.events` object can raise these events:
 - `history`: After navigated in the browser history
 - `load`: LSC initialized (raised only once for the singleton instance)
 - `error`: Failed to fetch an URI
+- `invalid`: The fetched response has an invalid MIME type (`text/html` (HTML) and `application/xhtml+xml`(XHTML) are allowed)
 
 ## Automatic renewal of browser caches
 
@@ -403,12 +421,38 @@ await LSC('cacheName',1);
 
 __NOTE__: LSC is a singleoton instance. It's not possible to manage more than one cache for a website. You could simulate multiple individual caches by using key-prefixes (f.e. `cachePrefix_key`).
 
+Per default only HTML and XHTML response MIME types are allowed. If you want to use the LSC functions for other MIME types, please use `get` and `update` like this:
+
+```js
+// Get any response MIME type using "get"
+var response=LSC.instance.get('https://...',false,true);
+
+// Get any response MIME type using "update"
+response=LSC.instance.update('https://...',false,true);
+```
+
+The 2nd parameter doesn't request with priority (respecting the concurrent fetch-actions), the 3rd parameter allows any response MIME type.
+
+**NOTE**: When using `get` the 3rd parameter won't have any effect, if the requested URI is in the cache already.
+
 ## Good to know
 
 Managed links will have the attribute `data-lscmanaged`. To force managing links that would not be managed otherwise, you can add this attribute in your HTML code. To avoid managing a link, add the attribute `data-lscunmanaged`.
 
 When LSC pre-fetched a link URI content, the link will get the attribute `data-lscprefetched`.
 
-## WordPress plugin
+## Add-ons
 
-LSC is also available as [WordPress plugin](WordPress/).
+Have a look at the [add-ons index](add-ons/) for more fun with LSC!
+
+## Roadmap
+
+- [ ] Prediction engine extension: Pre-fetch only contents of links that the user may click soon (predicted from the mouse actions)
+- [ ] Browser plugin: For using LSC with any website on demand
+	- [ ] Chrome plugin
+	- [ ] Edge plugin
+	- [ ] Firefox plugin
+	- [ ] Safari plugin
+- [ ] Inspector: Find possible issues with a website when using LSC
+	- [ ] Find `load`, `DOMContentLoaded` and `readystatechanged` event handlers
+	- [ ] No (or only a few) manageable links (compared to the number of unmanageable links)

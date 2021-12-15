@@ -10,15 +10,15 @@ jobs:
       - name: Copy files
         run: | 
           cp -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/docs/
-          cp -f ${GITHUB_WORKSPACE}/LICENSE ${GITHUB_WORKSPACE}/WordPress/
-          cp -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/WordPress/
+          cp -f ${GITHUB_WORKSPACE}/LICENSE ${GITHUB_WORKSPACE}/add-ons/WordPress/
+          cp -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/add-ons/WordPress/
     
       - name: Minify CSS/JS
         uses: nizarmah/auto-minify@v2.1.1
         
       - name: Finalize WordPress plugin
         run: |
-          cd ${GITHUB_WORKSPACE}/WordPress
+          cd ${GITHUB_WORKSPACE}/add-ons/WordPress
           rm -f lsc.zip
           zip -9 -D -T lsc.zip *
     

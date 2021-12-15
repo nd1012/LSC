@@ -17,16 +17,12 @@ if(basename($_SERVER['SCRIPT_FILENAME'])==basename(__FILE__)){
 	// Initialize WordPress
 	ob_start();
 	while(!file_exists('wp-load.php'))
-		if(!chdir('../')){
-			trigger_error('Failed to include wp-load.php',E_USER_WARNING);
-			exit;
-		}
+		if(!chdir('../'))
+			trigger_error('Failed to include wp-load.php',E_USER_ERROR);
 	require_once 'wp-load.php';
 	// Validate the action parameter
-	if(!isset($_REQUEST['lsc_action'])||$_REQUEST['lsc_action']==''){
-		trigger_error('LSC webservice call without action parameter',E_USER_NOTICE);
-		exit;
-	}
+	if(!isset($_REQUEST['lsc_action'])||$_REQUEST['lsc_action']=='')
+		trigger_error('LSC webservice call without action parameter',E_USER_ERROR);
 	// Perform actions without token
 	switch($_REQUEST['lsc_action']){
 		case 'version':
@@ -39,10 +35,8 @@ if(basename($_SERVER['SCRIPT_FILENAME'])==basename(__FILE__)){
 		!isset($_REQUEST['lsc_token'])||
 		$_REQUEST['lsc_token']==''||
 		wp_unslash($_REQUEST['lsc_token'])!=get_option('lsc_token','')
-		){
-		trigger_error('LSC webservice call without valid token',E_USER_WARNING);
-		exit;
-	}
+		)
+		trigger_error('LSC webservice call without valid token',E_USER_ERROR);
 	// Perform actions with token
 	switch($_REQUEST['lsc_action']){
 		case 'increaseversion':
@@ -51,7 +45,7 @@ if(basename($_SERVER['SCRIPT_FILENAME'])==basename(__FILE__)){
 			echo $version;
 			exit;
 		default:
-			trigger_error('Invalid/unknown action "'.$_REQUEST['lsc_action'].'"',E_USER_WARNING);
+			trigger_error('Invalid/unknown action "'.$_REQUEST['lsc_action'].'"',E_USER_ERROR);
 			exit;
 	}
 	exit;
@@ -79,6 +73,7 @@ function lsc_js($force=false){
 	$quiet=!!get_option('lsc_quiet',false);
 	$max=intval(get_option('lsc_max',0));
 	$exclude=lsc_exclude_uris();
+	$include=lsc_include_uris();
 	$limit=intval(get_option('lsc_limit',5));
 	?><script>
 if(window.LSC&&!LSC.instance){
@@ -103,6 +98,10 @@ if(window.LSC&&!LSC.instance){
 	?>	LSC.exclude.push(...<?php echo json_encode($exclude); ?>);
 <?php
 	endif;// End exclude URIs
+	if($include&&count($include)):// Include URIs
+	?>	LSC.include.push(...<?php echo json_encode($include); ?>);
+<?php
+	endif;// End include URIs
 	?>	LSC.options.maxConcurrentFetch=<?php echo $limit; ?>;
 	window.addEventListener(
 		'load',
@@ -128,12 +127,10 @@ if(!is_admin()&&!!get_option('lsc_load',true)){
 
 // Automatic site version increase
 function &lsc_autoversion_options(){
-	$options=get_option('lsc_autoversion_options',null);
-	if(!$options) $options=Array(
+	return ($options=get_option('lsc_autoversion_options',null))?$options:$options=Array(
 		'wp_insert_post'=>'On post insert/update',
 		'comment_post'=>'On post comment'
 	);
-	return $options;
 }
 function lsc_autoversion(){
 	if(!defined('LSC_VERSION_AUTOUPDATE')){
@@ -147,11 +144,12 @@ if(!!get_option('lsc_autoversion',false))
 		if(!!get_option('lsc_autoversion_'.$hook,true))
 			add_action($hook,'lsc_autoversion',10,0);
 
-// Exclude URIs
+// Exclude/include URIs
 function &lsc_exclude_uris(){
-	$uris=get_option('lsc_exclude',null);
-	if(!$uris) $uris=Array();
-	return $uris;
+	return ($uris=get_option('lsc_exclude',null))?$uris:$uris=Array();
+}
+function &lsc_include_uris(){
+	return ($uris=get_option('lsc_include',null))?$uris:$uris=Array();
 }
 
 // Admin initialization
@@ -177,12 +175,14 @@ function lsc_admin_init(){
 		if(is_null(get_option($option,null)))
 			add_option($option,$def);
 	}
-	if(!get_option('lsc_autoversion_options',null)) add_option('lsc_autoversion_options',Array());
-	if(!get_option('lsc_exclude',null)) add_option('lsc_exclude',Array());
+	// Define internal options
+	foreach(Array('lsc_autoversion_options','lsc_exclude','lsc_include') as $option)
+		if(!get_option($option,null))
+			add_option($option,Array());
 	// Parse parameters
 	$param=Array();
 	foreach($_POST as $key=>$value)
-		if(preg_match('/^option_page|action|(delete_)?lsc_(autoversion|exclude)_.+$/',$key))
+		if(preg_match('/^option_page|action|(delete_)?lsc_(autoversion|exclude|include)_.+$/',$key))
 			$param[$key]=strip_tags((string)wp_unslash($value));
 	// Return, if settings wheren't updated
 	if(!isset($param['option_page'])||$param['option_page']!='lsc'||!isset($param['action'])||$param['action']!='update')
@@ -223,29 +223,42 @@ function lsc_admin_init(){
 	// Store exclude URIs
 	$uris=Array();
 	$cnt=0;
-	foreach($param as $key=>$value)
-		if(preg_match('/^lsc_exclude_[^_]+$/',$key)){
-			$cnt++;
-			if($cnt>100){
-				if($cnt==101) add_settings_error($key,$key,'Too many exclude URIs defined (max. 100)','error');
-				continue;
-			}
-			$uris[]=$value;
+	foreach($param as $key=>$value){
+		if(!preg_match('/^lsc_exclude_[^_]+$/',$key)) continue;
+		$cnt++;
+		if($cnt>100){
+			if($cnt==101) add_settings_error($key,$key,'Too many exclude URIs defined (max. 100)','error');
+			continue;
 		}
+		$uris[]=$value;
+	}
 	update_option('lsc_exclude',$uris);
+	// Store include URIs
+	$uris=Array();
+	$cnt=0;
+	foreach($param as $key=>$value){
+		if(!preg_match('/^lsc_include_[^_]+$/',$key)) continue;
+		$cnt++;
+		if($cnt>100){
+			if($cnt==101) add_settings_error($key,$key,'Too many include URIs defined (max. 100)','error');
+			continue;
+		}
+		$uris[]=$value;
+	}
+	update_option('lsc_include',$uris);
 }
 add_action('admin_init','lsc_admin_init',10,0);
 
 if(is_admin()){
 	// Configuration menu option
 	function lsc_admin(){
-		if(!is_admin()||!current_user_can('administrator')) return;
-		add_options_page('Configuration','LSC','manage_options','lsc_config','lsc_config');
+		if(is_admin()&&current_user_can('administrator'))
+			add_options_page('Configuration','LSC','manage_options','lsc_config','lsc_config');
 	}
 	function lsc_config(){
 		if(!is_admin()||!current_user_can('administrator')) return;
 		?><style type="text/css">
-#lsc_options_form span.deleted label,#lsc_options_form span.deleted span{
+#lsc_options_form span.deleted label,#lsc_options_form span.deleted code{
 	text-decoration:line-through;
 }
 </style>
@@ -256,20 +269,20 @@ if(is_admin()){
 		settings_fields('lsc');
 	?><h2>Configuration</h2>
 <p>Disable automatic LSC loading, if you plan to load the JavaScript and integrate the required HTML by yourself (in your DIY theme, f.e.).</p>
-<p>If you won't provide a cache name, LSC will use the domain of your website. If you leave the site version &lt;1, LSC will use the current date and time, which will cache the current session, but renew the cache on the next page visit or reload.</p>
-<p>If the browser history is managed by LSC, the browser will display changed URIs, but the document object won't change, which will cause no DOM objects being raised during load/unload.<br />
-If the browser history is unmanaged, the browsers URI will stay the initial URI while other pages are being displayed, but a new document object will be used for every page, which will raise load/unload DOM events.</p>
 <p>Per default the URI file extensions <strong>html</strong>, <strong>htm</strong> and <strong>php</strong> are managed. You may add a comma separated list of additional extensions as required.</p>
+<p>A small webservice allows you to fetch the current site version, or increase the site version number (if you provide the configured secret webservice token).</p>
+<p>For a deeper description of these settings please visit the <a href="https://github.com/nd1012/LSC" target="_blank">LSC project page on GitHub</a>.</p>
 <div id="lsc_autoversion_template" hidden="hidden"><span id="lsc_autoversion_template_span">&nbsp;&nbsp;&nbsp;&nbsp;<label for="lsc_autoversion_template_input"><input type="checkbox" name="lsc_autoversion_template_input" id="lsc_autoversion_template_input" value="1" checked="checked" /></label> <small>(<a href="">Delete</a>)</small><br /><input type="hidden" name="lsc_autoversion_template_info" value="" /></span></div>
-<div id="lsc_exclude_template" hidden="hidden"><span id="lsc_exclude_template_span"><span></span> <small>(<a href="">Delete</a>)</small><br /><input type="hidden" name="lsc_exclude_template_uri" value="" /></span></div>
+<div id="lsc_exclude_template" hidden="hidden"><span id="lsc_exclude_template_span"><code></code> <small>(<a href="">Delete</a>)</small><br /><input type="hidden" name="lsc_exclude_template_uri" value="" /></span></div>
+<div id="lsc_include_template" hidden="hidden"><span id="lsc_include_template_span"><code></code> <small>(<a href="">Delete</a>)</small><br /><input type="hidden" name="lsc_include_template_uri" value="" /></span></div>
 <table class="form-table" id="lsc_options_form">
 <tr valign="top">
 <th scope="row">Load LSC</th>
-<td><label for="lsc_load"><input type="checkbox" name="lsc_load" id="lsc_load" value="1" <?php echo get_option('lsc_load',true)?'checked="checked"':''; ?> /> Automatic load LSC</label></td>
+<td><label for="lsc_load"><input type="checkbox" name="lsc_load" id="lsc_load" value="1" <?php echo get_option('lsc_load',true)?'checked="checked"':''; ?> /> Load the LSC JavaScript</label></td>
 </tr>
 <tr valign="top">
 <th scope="row">Minified</th>
-<td><label for="lsc_min"><input type="checkbox" name="lsc_min" id="lsc_min" value="1" <?php echo get_option('lsc_min',true)?'checked="checked"':''; ?> /> Use the minified JavaScript</label></td>
+<td><label for="lsc_min"><input type="checkbox" name="lsc_min" id="lsc_min" value="1" <?php echo get_option('lsc_min',true)?'checked="checked"':''; ?> /> Use the minified JavaScript version</label></td>
 </tr>
 <tr valign="top">
 <th scope="row">JavaScript position</th>
@@ -277,11 +290,13 @@ If the browser history is unmanaged, the browsers URI will stay the initial URI 
 </tr>
 <tr valign="top">
 <th scope="row"><label for="lsc_cache_name">Cache name</label></th>
-<td><input type="text" name="lsc_cache_name" maxlength="64" id="lsc_cache_name" pattern="[a-z|A-Z|0-9|\-|\.|_]*" value="<?php echo esc_attr(get_option('lsc_cache_name','')); ?>" size="40" class="regular-text" /></td>
+<td><input type="text" name="lsc_cache_name" maxlength="64" id="lsc_cache_name" pattern="[a-z|A-Z|0-9|\-|\.|_]*" value="<?php echo esc_attr(get_option('lsc_cache_name','')); ?>" size="40" class="regular-text" /><br />
+<small><strong>Hint:</strong> Leave the value empty to use your wwebsites hostname.</small></td>
 </tr>
 <tr valign="top">
 <th scope="row"><label for="lsc_version">Site version</label></th>
-<td><input type="number" min="0" name="lsc_version" id="lsc_version" value="<?php echo esc_attr(get_option('lsc_version','0')); ?>" size="20" class="regular-text" /></td>
+<td><input type="number" min="0" name="lsc_version" id="lsc_version" value="<?php echo esc_attr(get_option('lsc_version','0')); ?>" size="20" class="regular-text" /><br />
+<small><strong>Hint:</strong> Set a zero value for using the current Unix timestamp always.</small></td>
 </tr>
 <tr valign="top" id="lsc_autoversion_row">
 <th scope="row">Automatic version</th>
@@ -293,6 +308,7 @@ If the browser history is unmanaged, the browsers URI will stay the initial URI 
 <?php
 		}
 		?><p class="addNewHook"><strong>Add new hook</strong></p>
+<p><small><strong>Hint:</strong> You can add WordPress hooks as required. Every time a hook was executed, the site version will be increased.</small></p>
 <p><label for="lsc_new_hook">WordPress hook name:<br />
 <input type="text" max="64" name="lsc_new_hook" id="lsc_new_hook" size="40" class="regular-text" /></label><br />
 <label for="lsc_new_info">Information:<br />
@@ -313,31 +329,46 @@ If the browser history is unmanaged, the browsers URI will stay the initial URI 
 </tr>
 <tr valign="top">
 <th scope="row"><label for="lsc_extensions">Managed extensions</label></th>
-<td><input type="text" name="lsc_extensions" maxlength="256" id="lsc_extensions" value="<?php echo esc_attr(get_option('lsc_extensions','')); ?>" size="40" class="regular-text" /></td>
+<td><input type="text" name="lsc_extensions" maxlength="256" id="lsc_extensions" value="<?php echo esc_attr(get_option('lsc_extensions','')); ?>" size="40" class="regular-text" /><br />
+<small><strong>Hint:</strong> Per default <strong>html</strong>, <strong>htm</strong> and <strong>php</strong> are managed. Add more extensions comma separated.</small></td>
 </tr>
 <tr valign="top" id="lsc_exclude_row">
-<th scope="row"><label for="lsc_exclude">Exclude URIs</label></th>
+<th scope="row">Exclude URIs</th>
 <td><?php
 		foreach(lsc_exclude_uris() as $uri){
-			$id='lsc_exclude_'.strtolower(uniqid());
-			$attr=esc_attr($id);
-			?><span id="<?php echo $attr; ?>_span"><span><?php echo esc_html($uri); ?></span> <small>(<a href="javascript:lsc_delete_exclude('<?php echo esc_html(preg_quote($id,"'")); ?>');">Delete</a>)</small><br /><input type="hidden" name="<?php echo $attr; ?>" value="<?php esc_attr($uri); ?>" /></span>
+			$attr=esc_attr($id='lsc_exclude_'.strtolower(uniqid()));
+			?><span id="<?php echo $attr; ?>_span"><code><?php echo esc_html($uri); ?></code> <small>(<a href="javascript:lsc_delete_exclude('<?php echo esc_html(preg_quote($id,"'")); ?>');">Delete</a>)</small><br /><input type="hidden" name="<?php echo $attr; ?>" value="<?php esc_attr($uri); ?>" /></span>
 <?php
 		}
 ?><p class="addNewExclude"><strong>Add new exclude</strong></p>
 <p><label for="lsc_new_exclude">URI or regular expression:<br />
 <input type="text" min="7" max="256" name="lsc_new_exclude" id="lsc_new_exclude" size="40" class="regular-text" /></label><br />
-<small><strong>Tip:</strong> Use &quot;<strong>/</strong>&quot; as delimiter for defining a regular expression.</small><br />
+<small><strong>Hint:</strong> Use &quot;<strong>/</strong>&quot; as delimiter for defining a regular expression.</small><br />
 <input type="button" value="Add exclude" onclick="lsc_add_exclude();" /></p>
 </td>
 </tr>
+<tr valign="top" id="lsc_include_row">
+<th scope="row">Include URIs</th>
+<td><?php
+		foreach(lsc_include_uris() as $uri){
+			$attr=esc_attr($id='lsc_include_'.strtolower(uniqid()));
+			?><span id="<?php echo $attr; ?>_span"><code><?php echo esc_html($uri); ?></code> <small>(<a href="javascript:lsc_delete_include('<?php echo esc_html(preg_quote($id,"'")); ?>');">Delete</a>)</small><br /><input type="hidden" name="<?php echo $attr; ?>" value="<?php esc_attr($uri); ?>" /></span>
+<?php
+		}
+?><p class="addNewInclude"><strong>Add new include</strong></p>
+<p><label for="lsc_new_include">URI or regular expression:<br />
+<input type="text" min="7" max="256" name="lsc_new_include" id="lsc_new_include" size="40" class="regular-text" /></label><br />
+<small><strong>Hint:</strong> Use &quot;<strong>/</strong>&quot; as delimiter for defining a regular expression. An include will override an exclude.</small><br />
+<input type="button" value="Add include" onclick="lsc_add_include();" /></p>
+</td>
 <tr valign="top">
 <th scope="row">Quiet</th>
 <td><label for="lsc_quiet"><input type="checkbox" name="lsc_quiet" id="lsc_quiet" value="1" <?php echo get_option('lsc_quiet',true)?'checked="checked"':''; ?> /> Write only warnings, errors and debug information to the JavaScript console</label></td>
 </tr>
 <tr valign="top">
 <th scope="row"><label for="lsc_max">Max. # of cached entries</label></th>
-<td><input type="number" min="0" name="lsc_max" id="lsc_max" value="<?php echo esc_attr(get_option('lsc_max','0')); ?>" size="20" class="regular-text" /></td>
+<td><input type="number" min="0" name="lsc_max" id="lsc_max" value="<?php echo esc_attr(get_option('lsc_max','0')); ?>" size="20" class="regular-text" /><br />
+<small><strong>Tip:</strong> Enter a value of zero to disable the maximum number of cached entries.</small></td>
 </tr>
 <tr valign="top">
 <th scope="row"><label for="lsc_limit">Concurrent fetch limit</label></th>
@@ -481,10 +512,10 @@ if(typeof window.lsc_add_option=='undefined'){
 			}
 			newExclude.setAttribute('id',id+'_span');
 			before.parentNode.insertBefore(newExclude,before);
-			const span=newExclude.childNodes[0],
+			const code=newExclude.childNodes[0],
 				link=document.querySelector('#'+lsc_escape_id(id)+'_span a'),
 				hidden=document.querySelector('#'+lsc_escape_id(id)+'_span input');
-			span.innerText=newUri.value;
+			code.innerText=newUri.value;
 			link.setAttribute('href','javascript:lsc_delete_exclude("'+lsc_escape_id(id)+'");');
 			hidden.setAttribute('name',id);
 			hidden.setAttribute('value',newUri.value);
@@ -513,6 +544,74 @@ if(typeof window.lsc_add_option=='undefined'){
 		link.setAttribute('href','javascript:lsc_delete_exclude("'+lsc_escape_id(id)+'");');
 		hidden.setAttribute('name',id);
 	}
+	function lsc_add_include(){
+			// New include URI
+		const newUri=document.getElementById('lsc_new_include'),
+			// ID of the new exclude
+			id='lsc_include_'+Math.floor(Math.random()*Number.MAX_SAFE_INTEGER-0),
+			// Existing
+			existing=document.querySelector('#lsc_include_row input[type="hidden"][value="'+lsc_escape_id(newUri.value)+'"]');
+			// New include template
+			tmpl=existing?null:document.getElementById('lsc_include_template'),
+			// New exclude
+			newInclude=existing?null:tmpl.firstChild.cloneNode(true),
+			// Insert before element
+			before=existing?null:document.querySelector('#lsc_include_row .addNewInclude');
+		if(existing){
+			// Validate deleted existing include
+			if(!document.querySelector('#'+lsc_escape_id(existing.getAttribute('name').substring(7))+'_span.deleted')){
+				alert('Include exists already');
+				return false;
+			}
+			lsc_undelete_include(existing.getAttribute('name').substring(7));
+		}else{
+			// Create a new include
+			if(newUri.value.substring(0,1)=='/'){
+				try{
+					if(!/^\/.*\/[a-z]*$/.test(newUri.value)) throw new Error('Invalid syntax');
+					new RegEx(newUri.value.replace(/^(\/.*\/)[a-z]*$/,"$1"),newUri.value.replace(/^\/.*\/([a-z]*)$/,"$1"));
+				}catch(ex){
+					alert('Invalid regular expression: '+ex.getMessage());
+					return false;
+				}
+			}else if(!/^https?\:\/\/.+/i.test(newUri.value)){
+				alert('Invalid URI');
+				return false;
+			}
+			newInclude.setAttribute('id',id+'_span');
+			before.parentNode.insertBefore(newInclude,before);
+			const code=newInclude.childNodes[0],
+				link=document.querySelector('#'+lsc_escape_id(id)+'_span a'),
+				hidden=document.querySelector('#'+lsc_escape_id(id)+'_span input');
+			code.innerText=newUri.value;
+			link.setAttribute('href','javascript:lsc_delete_include("'+lsc_escape_id(id)+'");');
+			hidden.setAttribute('name',id);
+			hidden.setAttribute('value',newUri.value);
+		}
+		// Clear the form
+		newUri.value='';
+		return false;
+	}
+	function lsc_delete_include(id){
+		// Delete an include
+		const span=document.getElementById(id+'_span'),
+			link=document.querySelector('#'+span.id+' a'),
+			hidden=document.querySelector('#'+span.id+' input');
+		span.className='deleted';
+		link.innerText='Undelete';
+		link.setAttribute('href','javascript:lsc_undelete_include("'+lsc_escape_id(id)+'");');
+		hidden.setAttribute('name','delete_'+hidden.name);
+	}
+	function lsc_undelete_include(id){
+		// Undelete an include
+		const span=document.getElementById(id+'_span'),
+			link=document.querySelector('#'+span.id+' a'),
+			hidden=document.querySelector('#'+span.id+' input');
+		span.className='';
+		link.innerText='Delete';
+		link.setAttribute('href','javascript:lsc_delete_include("'+lsc_escape_id(id)+'");');
+		hidden.setAttribute('name',id);
+	}
 	function lsc_escape_id(id){
 		// Escape an ID for JavaScript usage
 		return id.replace(/[\\|\"|\']/g,'\\$&').replace(/\u0000/g,'\\0');
@@ -531,6 +630,7 @@ if(typeof window.lsc_add_option=='undefined'){
 	function lsc_uninstall(){
 		delete_option('lsc_autoversion_options');
 		delete_option('lsc_exclude');
+		delete_option('lsc_include');
 	}
 	register_activation_hook(__FILE__,'lsc_activate');
 }
