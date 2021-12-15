@@ -4,13 +4,18 @@ if(typeof window.LSC=='undefined'){
 	window.LSC=async (key,version,preFetch)=>{
 		// This is a singleton object!
 		if(typeof window.LSC!='undefined'&&LSC.instance){
-			if(typeof key!='undefined'&&key!=LSC.instance.getKey()) throw new Error('Can not change LSC cache key');
-			if(version&&version>LSC.instance.getCacheVersion()){
+				// Running instance
+			const lsc=LSC.instance;
+			// Deny cache key update
+			if(typeof key!='undefined'&&key!=lsc.getKey()) throw new Error('Can not change LSC cache key');
+			// Handle a new cache version
+			if(version&&version>lsc.getCacheVersion()){
 				console.debug('Initialize newer LSC cache version',version);
-				LSC.instance.clear(version);
-				await LSC.instance.get(window.location.href);// Ensure the initial HTML is in the cache
+				lsc.clear(version);
+				await lsc.get(window.location.href);// Ensure the initial HTML is in the cache
 			}
-			return LSC.instance;
+			// Return the running instance instead of THIS
+			return lsc;
 		}
 		
 		// Constants
@@ -18,9 +23,9 @@ if(typeof window.LSC=='undefined'){
 		const self=LSC.instance=this,
 			// Regular expression to match a link URI to manage
 			rx=new RegExp('^[^\:]+\:\/\/'+document.location.hostname.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(\/.*)?$','i'),
-			// Regular expression to match the file extension in an URI
+			// Regular expression to match the file extension from an URI
 			extRx=/^.+\.([^\.|\/]+)$/,
-			// Regular expression to test for an URI path without a filename
+			// Regular expression to test for an URI without a filename
 			noExtRx=/\/$/;
 		
 		// Prepare the cache
@@ -43,13 +48,29 @@ if(typeof window.LSC=='undefined'){
 				console.debug('LSC disabled');
 				return;
 			}
-			e.preventDefault();
-			await self.navigate(e.target.href);
+			if(await self.navigate(e.target.href)){
+				// Stop the browser from handling the link click on success
+				e.preventDefault();
+			}else{
+				// Let the browser handle the link click if failed
+				console.warn('LSC failed to navigate',e);
+			}
 		};
 		
 		// Determine if an URI is excluded
 		const isExcluded=(uri)=>{
 			for(let ex in LSC.excluded)
+				if(ex instanceof RegEx){
+					if(ex.test(uri)) return true;
+				}else if(uri.substring(0,ex.length)==ex){
+					return true;
+				}
+			return false;
+		};
+		
+		// Determine if an URI is included (can override an exclude)
+		const isIncluded=(uri)=>{
+			for(let ex in LSC.included)
 				if(ex instanceof RegEx){
 					if(ex.test(uri)) return true;
 				}else if(uri.substring(0,ex.length)==ex){
@@ -69,18 +90,21 @@ if(typeof window.LSC=='undefined'){
 				managed=[];
 				// "beforemanage" event object
 			let e;
-			for(let [,a] of document.querySelectorAll(LSC.selector).entries()){
+			for(let [,a] of document.querySelectorAll(LSC.selector).entries())
 				if(
-					a.href.indexOf('?')<0&&// No GET parameters
-					a.href.indexOf('#')<0&&// No anchor
-					rx.test(a.href)&&// URI of the current domain
+					isIncluded(e.href)||// Forced to include
 					(
-						noExtRx.test(a.href)||// Path without filename
+						a.href.indexOf('?')<0&&// No GET parameters
+						a.href.indexOf('#')<0&&// No anchor
+						rx.test(a.href)&&// URI of the current domain
 						(
-							extRx.test(a.href)&&// File with extension
-							extensions.indexOf(a.href.replace(extRx,"$1"))>-1)// File extension is supported
-						)&&
-					!isExcluded(a.href)// Not excluded
+							noExtRx.test(a.href)||// Path without filename
+							(
+								extRx.test(a.href)&&// File with extension
+								extensions.indexOf(a.href.replace(extRx,"$1"))>-1)// File extension is supported
+								)&&
+							!isExcluded(a.href)// Not excluded
+						)
 					){
 					console.debug('Manage link',a.href,a);
 					e=new CustomEvent('beforemanage',{detail:{link:a,manage:true,preFetch:true}});
@@ -107,7 +131,6 @@ if(typeof window.LSC=='undefined'){
 						self.get(a.href);
 					}
 				}
-			}
 			LSC.events.dispatchEvent(new CustomEvent('manage',{detail:{html:html,extensions:extensions,managed:managed}}));
 			return managed;
 		};
@@ -145,6 +168,11 @@ if(typeof window.LSC=='undefined'){
 				hasIndex=typeof index!='undefined',
 				// HTML of the URI
 				html=await self.get(uri,true);
+			if(html==null){
+				// Raise a warning, if the requested HTML is missing
+				console.warn('LSC got no HTML for URI "'+uri+'"',noState,index,oldUri);
+				return false;
+			}
 			LSC.events.dispatchEvent(new CustomEvent('beforenavigate',{detail:{uri:uri,noState:noState,oldUri:oldUri,history:historyIndex}}));
 			if(LSC.options.history){
 				// Support browser history
@@ -178,20 +206,20 @@ if(typeof window.LSC=='undefined'){
 					// Document body
 				const body=document.querySelector('body');
 				if(body&&body.hasAttribute('onload'))
-					(new Function('event',body.getAttribute('onload')))(new Event('load'));
+					new Function('event',body.getAttribute('onload'))(new Event('load'));
 			}
 			LSC.events.dispatchEvent(new CustomEvent('navigated',{detail:{uri:uri,noState:noState,oldUri:oldUri,history:historyIndex}}));
-			return html;
+			return true;
 		};
 		
 		// Fetch an URI and update the cache
-		this.update=async (uri,priority)=>{
-			console.debug('Update LSC cache for "'+uri+'"');
+		this.update=async (uri,priority,ignoreMime)=>{
+			console.debug('Update LSC cache for "'+uri+'"',priority,ignoreMime);
 			// Avoid double-fetching
 			if(!priority&&fetching.has(uri)){
 				console.debug('LSC avoid double-fetching "'+uri+'"');
 				await fetching.get(uri);
-				return cache.has(uri)?cache.get(uri):null;
+				return cache.get(uri);
 			}
 			// Avoid too many concurrent fetch-actions
 				// If we had to pause because of too many concurrent fetch-actions
@@ -201,17 +229,41 @@ if(typeof window.LSC=='undefined'){
 				for(paused=true;fetching.size>=LSC.options.maxConcurrentFetch;await fetching.entries().next().value[1]);
 				console.debug('Continue updating LSC cache for "'+uri+'"');
 			}
-				// Task resolve method
+				// Fetch-task resolve method
 			var resolve=null;
-			fetching.set(uri,new Promise((rm)=>resolve=rm));
+			if(!priority) fetching.set(uri,new Promise((rm)=>resolve=rm));
 			// Fetch the HTML of the requested URI
 			try{
+					// Response
+				const res=await fetch(uri),
+					// Response raw content type
+					rawCt=res.headers.get('Content-Type').trim(),
+					// Response MIME type
+					ct=rawCt.toLowerCase(),
+					// Is the response MIME type ok (HTML and XHTML are allowed)?
+					valid=ct.substring(0,9)=='text/html'||ct.substring(0,21)=='application/xhtml+xml';
 					// HTML of the URI
-				const html=await (await fetch(uri)).text(),
+					html=await res.text(),
 					// Event data
-					e=new CustomEvent('update',{detail:{uri:uri,html:html}});
+					e=new CustomEvent('update',{detail:{uri:uri,html:html,response:res,priority:!!priority,ignoreMime:!!ignoreMime}});
+				if(!valid&&!ignoreMime){
+					// Raise a warning on invalid response MIME type
+					console.warn('LSC received an invalid response MIME type for "'+uri+'"',uri,ct,res,e);
+					let ed=new CustomEvent(
+						'invalid',
+						{detail:{uri:uri,html:html,contentType:rawCt,response:res,cancel:false,priority:!!priority,ignoreMime:!!ignoreMime}}
+						);
+					debugger;
+					LSC.events.dispatchEvent(ed);
+					if(ed.detail.cancel){
+						// Return the old cache content
+						console.debug('Invalid MIME type response handling from "'+uri+'" has been disabled by LSC event handler',ed);
+						return cache.get(uri);
+					}
+				}
 				LSC.events.dispatchEvent(e);
 				if(typeof e.detail.html!='string'){
+					// Raise a warning on invalid HTML and return the old cache content
 					console.warn('LSC failed to fetch HTML from "'+uri+'"',e);
 					LSC.events.dispatchEvent(new CustomEvent('error',{detail:{uri:uri,html:e.detail.html}}));
 					debugger;
@@ -224,21 +276,27 @@ if(typeof window.LSC=='undefined'){
 					keys.next();// Skip the version number key, which is the first key always!
 					cache.delete(keys.next().value);
 				}
-				LSC.events.dispatchEvent(new CustomEvent('updated',{detail:{uri:uri,html:e.detail.html}}));
+				LSC.events.dispatchEvent(new CustomEvent(
+					'updated',
+					{detail:{uri:uri,html:e.detail.html,priority:!!priority,ignoreMime:!!ignoreMime}}
+					));
 				return e.detail.html;
 			}catch(ex){
 				console.error('Error updating LSC cache for "'+uri+'"',ex);
 				debugger;
 				return cache.get(uri);
 			}finally{
-				resolve();
-				fetching.delete(uri);
-				if(paused) console.debug('Finished updating LSC cache for "'+uri+'"');
+				if(!priority){
+					// Ensure the fetch-task is completed before returning
+					resolve();
+					fetching.delete(uri);
+					if(paused) console.debug('Finished updating LSC cache for "'+uri+'"');
+				}
 			}
 		}
 		
 		// Get an URI from the cache or fetch the URI and update the cache
-		this.get=async (uri,priority)=>cache.has(uri)?cache.get(uri):await self.update(uri,priority);
+		this.get=async (uri,priority,ignoreMime)=>cache.has(uri)?cache.get(uri):await self.update(uri,priority,ignoreMime);
 		
 		// Clear the cache
 		this.clear=(version)=>{
@@ -275,8 +333,8 @@ if(typeof window.LSC=='undefined'){
 	
 		// Construction code
 		if(!LSC.options.quiet) console.log('LSC initializing',key,version,preFetch);
-		if(!cache||(version&&cache.get('version')<+version)) this.clear(version);
-		document.body.addEventListener('beforeunload',this.store);
+		if(!cache||(version&&cache.get('version')<+version)) this.clear(version);// Ensure a valid cache (clear, if the site version increased)
+		document.body.addEventListener('beforeunload',this.store);// Store the cache when leaving this site
 		history.replaceState('LSC0',document.title,document.location.href);// Required to manage the history entry of the initial page
 		await this.get(document.location.href);// Ensure the initial HTML is in the cache
 		window.addEventListener('popstate',async (e)=>{
@@ -290,10 +348,16 @@ if(typeof window.LSC=='undefined'){
 				back=index<historyIndex;
 			console.debug('LSC history (#'+index+') navigation '+(back?'back':'forward')+' to "'+uri+'"',e);
 			e.preventDefault();
-			await self.navigate(uri,true,index);
+			if(!await self.navigate(uri,true,index)){
+				// Relocate on error
+				console.warn('LSC failed to navigate to "'+uri+'" - fallback to real browser relocation',e);
+				debugger;
+				document.location.href=uri;
+				return;
+			}
 			setTimeout(()=>LSC.events.dispatchEvent(new CustomEvent('history',{detail:{uri:uri,index:index,back:back}})),0);
 		});
-		manageLinks();
+		manageLinks();// Start managing links on the initial page
 		LSC.events.dispatchEvent(new Event('load'));
 		return this;
 	};
@@ -312,6 +376,9 @@ if(typeof window.LSC=='undefined'){
 	
 	// Excluded URIs or regular expressions
 	LSC.exclude=[];
+	
+	// Included URIs or regular expressions
+	LSC.include=[];
 
 	// LSC options	
 	LSC.options={
