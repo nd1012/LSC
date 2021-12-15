@@ -51,20 +51,30 @@ if(basename($_SERVER['SCRIPT_FILENAME'])==basename(__FILE__)){
 	exit;
 }
 
+// Get the LSC JavaScript version
+function lsc_version(){
+	return 2;
+}
+
+// Get the LSC WordPress Plugin version
+function lsc_plugin_version(){
+	return '1.0';
+}
+
 // Add the JavaScript to the page
 function lsc_js_enqueue($force=false){
 	if(is_admin()||(!$force&&!get_option('lsc_load',true))) return;
-	$file=!!get_option('lsc_min',true)?'lsc.min.js':'lsc.js';
 	wp_enqueue_script(
 		'LSC',
-		plugins_url($file,__FILE__),
+		lsc_js_uri(),
 		Array(),
-		(string)filemtime(__DIR__.'/'.$file),
+		(string)filemtime(__DIR__.'/'.lsc_js_file()),
 		!get_option('lsc_position',true)
 		);
 }
 function lsc_js($force=false){
-	if(is_admin()||(!$force&&!get_option('lsc_load',true))) return;
+	if(defined('LSC_JS')||is_admin()||(!$force&&!get_option('lsc_load',true))) return;
+	define('LSC_JS',true);
 	$name=get_option('lsc_cache_name',null);
 	$version=intval(get_option('lsc_version',0));
 	$preFetch=!!get_option('lsc_prefetch',false);
@@ -156,21 +166,7 @@ function &lsc_include_uris(){
 function lsc_admin_init(){
 	if(!is_admin()||!current_user_can('administrator')) return;
 	// Register options
-	$defaults=Array(
-		'lsc_cache_name'=>'',
-		'lsc_version'=>0,
-		'lsc_autoversion'=>false,
-		'lsc_history'=>true,
-		'lsc_prefetch'=>false,
-		'lsc_position'=>true,
-		'lsc_min'=>true,
-		'lsc_token'=>'',
-		'lsc_extensions'=>'',
-		'lsc_quiet'=>false,
-		'lsc_max'=>0,
-		'lsc_limit'=>5
-	);
-	foreach($defaults as $option=>$def){
+	foreach(lsc_settings(true) as $option=>$def){
 		register_setting('lsc',$option);
 		if(is_null(get_option($option,null)))
 			add_option($option,$def);
@@ -633,6 +629,68 @@ if(typeof window.lsc_add_option=='undefined'){
 		delete_option('lsc_include');
 	}
 	register_activation_hook(__FILE__,'lsc_activate');
+}
+
+// Tools
+function lsc_js_file(){
+	// Get the LSC JavaScript filename
+	return !!get_option('lsc_min',true)?'lsc.min.js':'lsc.js';
+}
+function lsc_js_uri(){
+	// Get the LSC JavaScript URI
+	return plugins_url(lsc_js_file(),__FILE__);
+}
+function lsc_match($uri,$rules){
+	// Determine if an URI matches a ruleset (like it comes from excludes/includes)
+	foreach($rules as $rule)
+		if(substr($rule,0,1)=='/'){
+			if(preg_match($rule,$uri)) return true;
+		}else if(substr($uri,0,strlen($rule))==$rule){
+			return true;
+		}
+	return false;
+}
+function &lsc_settings($defaults=false){
+	// Get all LSC settings
+	$res=Array(
+		'lsc_cache_name'=>'',
+		'lsc_version'=>0,
+		'lsc_autoversion'=>false,
+		'lsc_history'=>true,
+		'lsc_prefetch'=>false,
+		'lsc_position'=>true,
+		'lsc_min'=>true,
+		'lsc_token'=>'',
+		'lsc_extensions'=>'',
+		'lsc_quiet'=>false,
+		'lsc_max'=>0,
+		'lsc_limit'=>5,
+		'lsc_autoversion_options'=>$defaults?null:lsc_autoversion_options(),
+		'lsc_exclude'=>$defaults?null:lsc_exclude_uris(),
+		'lsc_include'=>$defaults?null:lsc_include_uris()
+	);
+	if(!$defaults){
+		foreach(array_keys($res) as $key)
+			if(!is_array($res[$key])){
+				$value=$res[$key];
+				$res[$key]=get_option($key,null);
+				if(is_null($res[$key])){
+					trigger_error('Missing LSC option value for setting "'.$key.'"',E_USER_WARNING);
+				}else if(is_int($value)&&!is_int($res[$key])){
+					$res[$key]=intval($res[$key]);
+				}else if(is_bool($value)&&!is_bool($res[$key])){
+					$res[$key]=!!$res[$key];
+				}else if(!is_string($res[$key])){
+					trigger_error('Expected string LSC option value, but have to convert "'.$key.'"',E_USER_WARNING);
+					$res[$key]=(string)$res[$key];
+				}
+			}
+	}else{
+		unset($res['lsc_autoversion_options']);
+		unset($res['lsc_exclude']);
+		unset($res['lsc_include']);
+	}
+	return $res;
 }
 
 endif;// End prevend double loading

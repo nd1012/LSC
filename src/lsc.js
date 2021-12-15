@@ -92,7 +92,7 @@ if(typeof window.LSC=='undefined'){
 			let e;
 			for(let [,a] of document.querySelectorAll(LSC.selector).entries())
 				if(
-					isIncluded(e.href)||// Forced to include
+					isIncluded(a.href)||// Forced to include
 					(
 						a.href.indexOf('?')<0&&// No GET parameters
 						a.href.indexOf('#')<0&&// No anchor
@@ -395,4 +395,7 @@ if(typeof window.LSC=='undefined'){
 		// Maximum number of concurrent fetch-actions
 		maxConcurrentFetch:5
 	};
+	
+	// LSC version
+	LSC.VERSION=2;// Please don't change the value!
 }
