@@ -1,32 +1,47 @@
 name: Release actions
 on:
-    push:
-        tags:
-            - 'v*'
-jobs:
-    Release-Actions:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout branch
-              uses: actions/checkout@v2
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version number
+        required: true
 
-            - name: Create release
-              uses: actions/create-release@v1
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                tag_name: ${{ github.ref }}
-                release_name: Release ${{ github.ref }}
-                draft: false
-                prerelease: false
+jobs:
+  Release-Actions:
+    runs-on: ubuntu-latest
+      steps:
+        - name: Checkout main
+          uses: actions/checkout@v2
+        
+        - name: Create branch
+          uses: peterjgrainger/action-create-branch@v2.0.1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            branch: 'v${{ github.event.inputs.version }}'
+
+        - name: Checkout branch
+          uses: actions/checkout@v2
+          with:
+            ref: 'v${{ github.event.inputs.version }}'
             
-            - name: Add WordPress plugin download to release
-              uses: actions/upload-release-asset@v1
-              env:
-                GITHUB_TOKEN: ${{ github.token }}
-              with:
-                tag_name: ${{ github.ref }}
-                upload_url: ${{ steps.create_release.outputs.upload_url }}
-                args: ${GITHUB_WORKSPACE}/add-ons/WordPress/lsc.zip
-                asset_name: lsc.zip
-                asset_content_type: application/zip
+        - name: Create release
+          uses: actions/create-release@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            tag_name: 'v${{ github.event.inputs.version }}'
+            release_name: 'Version ${{ github.event.inputs.version }}'
+            draft: false
+            prerelease: false
+            
+        - name: Add WordPress plugin download to release
+          uses: actions/upload-release-asset@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            tag_name: 'v${{ github.event.inputs.version }}'
+            upload_url: ${{ steps.create_release.outputs.upload_url }}
+            args: ${GITHUB_WORKSPACE}/add-ons/WordPress/lsc.zip
+            asset_name: lsc.zip
+            asset_content_type: application/zip
