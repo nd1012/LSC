@@ -1,8 +1,8 @@
 name: Publish release
 on:
-  - workflow_dispatch:
+  workflow_dispatch:
     inputs:
-      - version:
+      version:
         description: Version number
         required: true
 jobs:
