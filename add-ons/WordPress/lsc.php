@@ -53,12 +53,12 @@ if(basename($_SERVER['SCRIPT_FILENAME'])==basename(__FILE__)){
 
 // Get the LSC JavaScript version
 function lsc_version(){
-	return 2;
+	return 3;
 }
 
 // Get the LSC WordPress Plugin version
 function lsc_plugin_version(){
-	return '1.0';
+	return '1.1';
 }
 
 // Add the JavaScript to the page
