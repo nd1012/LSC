@@ -4,23 +4,43 @@
 <script src="/js/shared.js"></script>
 <script src="/js/popup.js"></script>
 <style>
+:root{
+	--bg-color:white;
+	--color:black;
+}
+@media (prefers-color-scheme: dark){
+	:root{
+		--bg-color:rgb(4,3,3);
+		--color:rgb(161,51,51);
+	}
+}
 body{
 	min-width:200px;
+	background-color:var(--bg-color);
+	color:var(--color);
 }
 summary{
 	white-space:nowrap;
 }
 #status{
 	font-weight:bold;
+	border-radius:4px;
+	padding-top:2px;
+	padding-bottom:2px;
+	padding-left:8px;
+	padding-right:8px;
 }
 #status.active{
-	color:green;
+	background-color:green;
+	color:white;
 }
 #status.loading{
-	color:orange;
+	background-color:orange;
+	color:black;
 }
 #status.inactive{
-	color:red;
+	background-color:red;
+	color:white;
 }
 </style>
 </head>

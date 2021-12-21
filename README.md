@@ -20,6 +20,7 @@ This handy JavaScript will cache the HTML of URIs that have been fetched from yo
 		- [Get the current LSC cache key](#get-the-current-lsc-cache-key)
 		- [Get the current LSC cache version](#get-the-current-lsc-cache-version)
 		- [Get the current LSC navigation history index](#get-the-current-lsc-navigation-history-index)
+		- [Determine if the LSC instance is pre-fetching](#determine-if-the-lsc-instance-is-pre-fetching)
 		- [Initialize the LSC cache with a new version after initialized during runtime](#initialize-the-lsc-cache-with-a-new-version-after-initialized-during-runtime)
 		- [Get if using the session storage](#get-if-using-the-session-storage)
 		- [Set if using the session storage](#set-if-using-the-session-storage)
@@ -128,6 +129,8 @@ document.querySelector('head').appendChild(script);
 LSC('test',1,true).then(()=>alert('LSC is ready!'));
 ```
 
+Or - for a maybe more fast and easy try, have a look at the [browser extension](add-ons/browser-extension/). The browser extension will attach LSC to any website running in the current browser tab and use the factory default settings for the LSC instance. That's easy, but you won't be able to adjust any settings when using the browser extension. Using the developer tools aproach will give you more control over what's happening.
+
 ### Pre-fetching
 
 The pre-fetching of URIs from the current page will be done in the background and shouldn't disturb the user. If pre-fetching is disabled, HTML will be loaded on demand. For each page, even for each link you can decide, if you want pre-fetch the URI(s) or not.
@@ -213,6 +216,15 @@ console.log(LSC.instance.getCacheVersion());
 ```js
 console.log(LSC.instance.getHistoryIndex());
 ```
+
+#### Determine if the LSC instance is pre-fetching
+
+```js
+if(LSC.instance.getPreFetch())
+	console.log(LSC.instance.getFetchCount());
+```
+
+If the LSC instance uses pre-fetching, the `getFetchCount` method will return the current pre-fetch stack size (without the fetching actions that are waiting in the background for the stack to free a slot).
 
 #### Initialize the LSC cache with a new version after initialized during runtime
 
