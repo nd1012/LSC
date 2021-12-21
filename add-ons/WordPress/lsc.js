@@ -397,5 +397,5 @@ if(typeof window.LSC=='undefined'){
 	};
 	
 	// LSC version
-	LSC.VERSION=2;// Please don't change the value!
+	LSC.VERSION=3;// Please don't change the value!
 }
