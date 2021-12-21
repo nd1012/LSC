@@ -44,3 +44,13 @@ jobs:
           asset_path: ./add-ons/WordPress/lsc.zip
           asset_name: lsc.zip
           asset_content_type: application/zip
+
+      - name: Add Chrominum browser extension download to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./add-ons/browser-extension/chrome/lsc-chrominum-extension.zip
+          asset_name: lsc-chrominum-extension.zip
+          asset_content_type: application/zip

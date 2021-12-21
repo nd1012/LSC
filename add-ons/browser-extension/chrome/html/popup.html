@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="/js/shared.js"></script>
+<script src="/js/popup.js"></script>
+<style>
+body{
+	min-width:200px;
+}
+summary{
+	white-space:nowrap;
+}
+#status{
+	font-weight:bold;
+}
+#status.active{
+	color:green;
+}
+#status.loading{
+	color:orange;
+}
+#status.inactive{
+	color:red;
+}
+</style>
+</head>
+<body>
+<h1>LSC</h1>
+<p>Status: <span id="status"></span></p>
+<form>
+<p>Browse websites faster by pre-fetching linked contents into a <code>localStorage</code> cache while you're reading</p>
+<div id="website">
+<details><summary><label for="session"><input type="checkbox" id="session" name="session"> Use <code>sessionStorage</code></label></summary>
+Using the session storage for cached contents will avoid storing sensitive information from a website for permanent.</details>
+</div>
+<div id="nowebsite" hidden="hidden">
+<p>Use this plugin while you're on a website that you'd like to browse faster.</p>
+</div>
+<p align="right"><input type="button" id="close" value="Close"></p>
+</form>
+</body>
+</html>

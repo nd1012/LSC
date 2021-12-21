@@ -12,6 +12,7 @@ jobs:
           cp -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/docs/
           cp -f ${GITHUB_WORKSPACE}/LICENSE ${GITHUB_WORKSPACE}/add-ons/WordPress/
           cp -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/add-ons/WordPress/
+          cp -f ${GITHUB_WORKSPACE}/src/lsc.js ${GITHUB_WORKSPACE}/add-ons/browser-extension/chrome/js/
     
       - name: Minify CSS/JS
         uses: nizarmah/auto-minify@v2.1.1
@@ -21,6 +22,12 @@ jobs:
           cd ${GITHUB_WORKSPACE}/add-ons/WordPress
           rm -f lsc.zip
           zip -9 -D -T lsc.zip *
+        
+      - name: Finalize Chrominum browser extension
+        run: |
+          cd ${GITHUB_WORKSPACE}/add-ons/browser-extension/chrome/
+          rm -f lsc-chrominum-extension.zip
+          zip -9 -D -T lsc-chrominum-extension.zip *
     
       - name: Commit modified files
         uses: stefanzweifel/git-auto-commit-action@v4

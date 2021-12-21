@@ -1,0 +1,39 @@
+{
+    "name": "LSC - JavaScript localStorage Cache",
+    "description": "Browse websites faster by pre-fetching linked contents into a localStorage cache while you're reading",
+    "version": "1.0.0",
+    "manifest_version": 3,
+    "icons": {
+        "16": "/img/icon-16x16.png",
+        "32": "/img/icon-32x32.png",
+        "48": "/img/icon-48x48.png",
+        "128": "/img/icon-128x128.png"
+    },
+    "action": {
+        "default_popup": "/html/popup.html",
+        "default_icon": {
+            "16": "/img/icon-16x16.png",
+            "32": "/img/icon-32x32.png",
+            "48": "/img/icon-48x48.png",
+            "128": "/img/icon-128x128.png"
+        }
+    },
+    "options_page": "/html/options.html",
+    "permissions": [
+        "storage",
+        "tabs",
+        "activeTab",
+        "scripting"
+    ],
+    "host_permissions": ["http://*/*","https://*/*"],
+    "content_security_policy": {
+    	"extension_pages": "script-src 'self'; object-src 'self'"
+    },
+    "content_scripts": [
+    	{
+	    	"matches": ["http://*/*","https://*/*"],
+	    	"js": ["/js/lsc.js","/js/shared.js","/js/lscplugin.js"],
+	    	"run_at": "document_start"
+	    }
+	]
+}

@@ -1,6 +1,6 @@
 # LSC addons
 
-- [Browser plugin](browser-plugin/)
+- [Browser extension](browser-extension/)
 - [WordPress plugin](WordPress/)
 - [Inspector](inspect/)
 - [Pre-fetch prediction engine](predict/)

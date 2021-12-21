@@ -448,11 +448,11 @@ Have a look at the [add-ons index](add-ons/) for more fun with LSC!
 ## Roadmap
 
 - [ ] Prediction engine extension: Pre-fetch only contents of links that the user may click soon (predicted from the mouse actions)
-- [ ] Browser plugin: For using LSC with any website on demand
-	- [ ] Chrome plugin
-	- [ ] Edge plugin
-	- [ ] Firefox plugin
-	- [ ] Safari plugin
+- [ ] Browser extension: For using LSC with any website on demand
+	- [x] Chrome extension
+	- [x] Edge extension
+	- [ ] Firefox extension (waiting for manifest version 3 to be supported)
+	- [ ] Safari extension
 - [ ] Inspector: Find possible issues with a website when using LSC
 	- [ ] Find `load`, `DOMContentLoaded` and `readystatechanged` event handlers
 	- [ ] No (or only a few) manageable links (compared to the number of unmanageable links)
