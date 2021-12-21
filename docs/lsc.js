@@ -2,31 +2,29 @@
 if(typeof window.LSC=='undefined'){
 	// LSC object
 	window.LSC=async (key,version,preFetch)=>{
+			// Instance
+		const self=LSC.instance?LSC.instance:this;
+		
 		// This is a singleton object!
-		if(typeof window.LSC!='undefined'&&LSC.instance){
-				// Running instance
-			const lsc=LSC.instance;
+		if(LSC.instance){
 			// Deny cache key update
-			if(typeof key!='undefined'&&key!=lsc.getKey()) throw new Error('Can not change LSC cache key');
+			if(typeof key!='undefined'&&key!=self.getKey()) throw new Error('Can not change LSC cache key');
 			// Handle a new cache version
-			if(version&&version>lsc.getCacheVersion()){
+			if(version&&version>self.getCacheVersion()){
 				console.debug('Initialize newer LSC cache version',version);
-				lsc.clear(version);
-				await lsc.get(window.location.href);// Ensure the initial HTML is in the cache
+				instance.clear(version);
+				await self.get(window.location.href);// Ensure the initial HTML is in the cache
 			}
 			// Return the running instance instead of THIS
-			return lsc;
+			return self;
 		}
+		LSC.instance=this;
 		
 		// Constants
-			// Instance reference
-		const self=LSC.instance=this,
 			// Regular expression to match a link URI to manage
-			rx=new RegExp('^[^\:]+\:\/\/'+document.location.hostname.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(\/.*)?$','i'),
+		const rx=new RegExp('^[^\:]+\:\/\/'+document.location.hostname.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(\/.*)?$','i'),
 			// Regular expression to match the file extension from an URI
-			extRx=/^.+\.([^\.|\/]+)$/,
-			// Regular expression to test for an URI without a filename
-			noExtRx=/\/$/;
+			extRx=/^.+([^\/]+|\.([^\.|\/]+))$/;
 		
 		// Prepare the cache
 		if(typeof key=='undefined'||key==null) key=document.location.hostname;
@@ -48,18 +46,25 @@ if(typeof window.LSC=='undefined'){
 				console.debug('LSC disabled');
 				return;
 			}
-			if(await self.navigate(e.target.href)){
-				// Stop the browser from handling the link click on success
-				e.preventDefault();
-			}else{
-				// Let the browser handle the link click if failed
-				console.warn('LSC failed to navigate',e);
-			}
+			e.preventDefault();
+			if(await self.navigate(e.target.href)) return;
+			// Redirect, if LSC navigation failed
+			console.warn('LSC failed to navigate',e);
+			if(LSC.debugOnError) debugger;
+			document.location.href=e.target.href;
+		};
+		
+		// Handle browser reload by user (Ctrl+R)
+		const reload=async (e)=>{
+			if(!e.ctrlKey||e.shiftKey||e.altKey||e.key!='R') return;
+			await self.clear(self.getCacheVersion());
+			debugger;
 		};
 		
 		// Determine if an URI is excluded
 		const isExcluded=(uri)=>{
-			for(let ex in LSC.excluded)
+			if(!LSC.exclude.length) return false;
+			for(let ex in LSC.exclude)
 				if(ex instanceof RegEx){
 					if(ex.test(uri)) return true;
 				}else if(uri.substring(0,ex.length)==ex){
@@ -70,7 +75,8 @@ if(typeof window.LSC=='undefined'){
 		
 		// Determine if an URI is included (can override an exclude)
 		const isIncluded=(uri)=>{
-			for(let ex in LSC.included)
+			if(!LSC.include.length) return false;
+			for(let ex in LSC.include)
 				if(ex instanceof RegEx){
 					if(ex.test(uri)) return true;
 				}else if(uri.substring(0,ex.length)==ex){
@@ -87,7 +93,9 @@ if(typeof window.LSC=='undefined'){
 				// Managed extensions
 				extensions=LSC.extensions,
 				// Managed link elements
-				managed=[];
+				managed=[],
+				// Now
+				now=Date.now();
 				// "beforemanage" event object
 			let e;
 			for(let [,a] of document.querySelectorAll(LSC.selector).entries())
@@ -98,13 +106,11 @@ if(typeof window.LSC=='undefined'){
 						a.href.indexOf('#')<0&&// No anchor
 						rx.test(a.href)&&// URI of the current domain
 						(
-							noExtRx.test(a.href)||// Path without filename
-							(
-								extRx.test(a.href)&&// File with extension
-								extensions.indexOf(a.href.replace(extRx,"$1"))>-1)// File extension is supported
-								)&&
-							!isExcluded(a.href)// Not excluded
-						)
+							!extRx.test(a.href)||// Path without filename
+							extensions.indexOf(a.href.replace(extRx,"$2"))>-1// File extension is supported
+						)&&
+						!isExcluded(a.href)// Not excluded
+					)
 					){
 					console.debug('Manage link',a.href,a);
 					e=new CustomEvent('beforemanage',{detail:{link:a,manage:true,preFetch:true}});
@@ -112,7 +118,7 @@ if(typeof window.LSC=='undefined'){
 					if(e.detail.manage){
 						// Manage
 						a.addEventListener('click',click);
-						a.setAttribute('data-lscmanaged',null);
+						a.setAttribute('data-lscmanaged',now);
 						managed.push(a);
 					}else{
 						// Event handler denied managing
@@ -127,8 +133,11 @@ if(typeof window.LSC=='undefined'){
 						!html.hasAttribute('data-noprefetch')&&// Pre-fetch not denied for the document
 						!a.hasAttribute('data-noprefetch')// Pre-fetch not denied for the link
 						){
-						a.setAttribute('data-lscprefetched',null);
-						self.get(a.href);
+						a.setAttribute('data-lscprefetched',now);
+						self.get(a.href).then((res)=>{
+							if(typeof res!='string')
+								a.setAttribute('data-lscprefetched',a.getAttribute('data-lscprefetched')+' (failed)');
+						});
 					}
 				}
 			LSC.events.dispatchEvent(new CustomEvent('manage',{detail:{html:html,extensions:extensions,managed:managed}}));
@@ -144,11 +153,17 @@ if(typeof window.LSC=='undefined'){
 		// Get the cache version
 		this.getCacheVersion=()=>cache.get('version');
 		
+		// Get if pre-fetching
+		this.getPreFetch=()=>preFetch;
+		
 		// Get the current history index
 		this.getHistoryIndex=()=>historyIndex;
 		
+		// Get the number of fetch actions
+		this.getFetchCount=()=>fetching.size;
+		
 		// Get if using the session storage
-		this.getSessionStorage=()=>seessionStorage;
+		this.getSessionStorage=()=>useSessionStorage;
 		
 		// Set if using the sessionStorage and store the current cache to the current store to use
 		this.setSessionStorage=(activate)=>{
@@ -199,6 +214,7 @@ if(typeof window.LSC=='undefined'){
 				historyIndex=0;
 				document.write(html);
 				document.close();
+				document.addEventListener('keydown',reload);
 			}
 			manageLinks();
 			if(LSC.options.history){
@@ -249,11 +265,11 @@ if(typeof window.LSC=='undefined'){
 				if(!valid&&!ignoreMime){
 					// Raise a warning on invalid response MIME type
 					console.warn('LSC received an invalid response MIME type for "'+uri+'"',uri,ct,res,e);
+					if(LSC.debugOnError) debugger;
 					let ed=new CustomEvent(
 						'invalid',
 						{detail:{uri:uri,html:html,contentType:rawCt,response:res,cancel:false,priority:!!priority,ignoreMime:!!ignoreMime}}
 						);
-					debugger;
 					LSC.events.dispatchEvent(ed);
 					if(ed.detail.cancel){
 						// Return the old cache content
@@ -265,8 +281,8 @@ if(typeof window.LSC=='undefined'){
 				if(typeof e.detail.html!='string'){
 					// Raise a warning on invalid HTML and return the old cache content
 					console.warn('LSC failed to fetch HTML from "'+uri+'"',e);
+					if(LSC.debugOnError) debugger;
 					LSC.events.dispatchEvent(new CustomEvent('error',{detail:{uri:uri,html:e.detail.html}}));
-					debugger;
 					return cache.get(uri);
 				}
 				cache.set(uri,e.detail.html);
@@ -283,7 +299,7 @@ if(typeof window.LSC=='undefined'){
 				return e.detail.html;
 			}catch(ex){
 				console.error('Error updating LSC cache for "'+uri+'"',ex);
-				debugger;
+				if(LSC.debugOnError) debugger;
 				return cache.get(uri);
 			}finally{
 				if(!priority){
@@ -321,7 +337,7 @@ if(typeof window.LSC=='undefined'){
 				if(notClear){
 					// Avoid stack overflow by endless recursion
 					console.error('Failed to store the LSC cache',e);
-					debugger;
+					if(LSC.debugOnError) debugger;
 				}else{
 					// Clear on error
 					console.error('Failed to store the LSC cache - initializing',e);
@@ -332,7 +348,7 @@ if(typeof window.LSC=='undefined'){
 		};
 	
 		// Construction code
-		if(!LSC.options.quiet) console.log('LSC initializing',key,version,preFetch);
+		if(!LSC.options.quiet) console.log('LSC initializing',LSC.VERSION,key,version,preFetch,LSC.options.isPlugin);
 		if(!cache||(version&&cache.get('version')<+version)) this.clear(version);// Ensure a valid cache (clear, if the site version increased)
 		document.body.addEventListener('beforeunload',this.store);// Store the cache when leaving this site
 		history.replaceState('LSC0',document.title,document.location.href);// Required to manage the history entry of the initial page
@@ -351,13 +367,14 @@ if(typeof window.LSC=='undefined'){
 			if(!await self.navigate(uri,true,index)){
 				// Relocate on error
 				console.warn('LSC failed to navigate to "'+uri+'" - fallback to real browser relocation',e);
-				debugger;
+				if(LSC.debugOnError) debugger;
 				document.location.href=uri;
 				return;
 			}
 			setTimeout(()=>LSC.events.dispatchEvent(new CustomEvent('history',{detail:{uri:uri,index:index,back:back}})),0);
 		});
 		manageLinks();// Start managing links on the initial page
+		document.addEventListener('keydown',reload);// Handle page reload
 		LSC.events.dispatchEvent(new Event('load'));
 		return this;
 	};
@@ -393,7 +410,11 @@ if(typeof window.LSC=='undefined'){
 		// Maximum number of cached entries and managed pre-fetched links per page (zero for unlimited)
 		maxEntries:0,
 		// Maximum number of concurrent fetch-actions
-		maxConcurrentFetch:5
+		maxConcurrentFetch:5,
+		// Debug on error?
+		debugOnError:true,
+		// Is running from the browser plugin?
+		isPlugin:false
 	};
 	
 	// LSC version
