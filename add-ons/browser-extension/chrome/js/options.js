@@ -28,5 +28,5 @@ window.addEventListener('load',async ()=>{
 	for(let id of settingsKeys)
 		document.getElementById(id).addEventListener('change',async ()=>await storeSettings());
 	// Translate the page
-	i18n_translate();
+	i18n_translate(false,false,true);
 });

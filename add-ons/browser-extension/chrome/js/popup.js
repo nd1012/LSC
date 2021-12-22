@@ -81,7 +81,7 @@ window.addEventListener('load',async ()=>{
 		},
 		// Set a status
 		setStatus=(status,icon,tab)=>{
-			statusElement.innerText=api.i18n.getMessage(status+'Info');
+			statusElement.innerText=i18n_translate(status+'Info',true);
 			statusElement.className=status;
 			if(icon) changeIcon('-'+status,tab);
 		},
@@ -108,13 +108,13 @@ window.addEventListener('load',async ()=>{
 		'click',
 		async ()=>{
 			await api.tabs.sendMessage((await api.tabs.query({active:true,currentWindow:true}))[0].id,{type:'clear'});
-			alert(api.i18n.getMessage('cacheCleared'));
+			alert(i18n_translate('cacheCleared',true));
 		}
 		);
 	// Close the popup when the user clicked the close button
 	document.getElementById('close').addEventListener('click',()=>close());
 	// Translate the page
-	i18n_translate();
+	i18n_translate(false,false,true);
 	// Get the current status
 	await updateStatus();
 });
