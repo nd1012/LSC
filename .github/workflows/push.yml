@@ -17,13 +17,13 @@ jobs:
       - name: Minify CSS/JS
         uses: nizarmah/auto-minify@v2.1.1
 
-      - name: Update files from external sources
-        run: |
-          wget -v -O ${GITHUB_WORKSPACE}/add-ons/browser-extension/chrome/js/html-i18n.min.js https://raw.githubusercontent.com/nd1012/HTML-i18n/main/src/html-i18n.min.js
-
       - name: Delete not required files
         run: | 
           rm -f ${GITHUB_WORKSPACE}/add-ons/browser-extension/chrome/js/*.min.js
+
+      - name: Update files from external sources
+        run: |
+          wget -v -O ${GITHUB_WORKSPACE}/add-ons/browser-extension/chrome/js/html-i18n.min.js https://raw.githubusercontent.com/nd1012/HTML-i18n/main/src/html-i18n.min.js
         
       - name: Finalize WordPress plugin
         run: |
