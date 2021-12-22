@@ -9,18 +9,26 @@ window.addEventListener('load',async ()=>{
 		// Status element
 		statusElement=document.getElementById('status'),
 		// Regular expression to match a http(s) URI
-		rxHttp=/^https?\:\/\//,
+		rxHttp=/^https?\:\/\//i,
+		// Get the current tab
+		currentTab=async ()=>(await api.tabs.query({active:true,currentWindow:true}))[0],
 		// Manage the active tab
-		manageTab=async (tab)=>{
+		manageTab=async (noUpdate)=>{
+				// Tab to manage
+			const tab=(await api.tabs.query({active:true,currentWindow:true}))[0],
 				// Manage the active tab?
-			const manage=rxHttp.test(tab.url.toLowerCase()),
+				manage=rxHttp.test(tab.url.toLowerCase()),
 				// Message
-				msg=manage?{
-					// Message type
-					type:'manage',
-					// Options
-					options:await api.storage.sync.get(defaultSettings)
-				}:null;
+				msg=manage
+					?{
+						// Message type
+						type:'manage',
+						// Options
+						options:await api.storage.sync.get(defaultSettings),
+						// Is an update because of settings changed?
+						update:!noUpdate
+					}
+					:null;
 			if(manage){
 				// Copy active tab options to the message
 				for(let key of optionsKeys)
@@ -35,46 +43,78 @@ window.addEventListener('load',async ()=>{
 				noWebsite.removeAttribute('hidden');
 			}
 		},
+		// Change the extension icon
+		changeIcon=(icon,tab)=>{
+			api.action.setIcon({
+				path:{
+			        16:'/img/icon'+icon+'-16x16.png',
+			        32:'/img/icon'+icon+'-32x32.png',
+			        48:'/img/icon'+icon+'-48x48.png',
+			        128:'/img/icon'+icon+'-128x128.png'
+			    },
+			    tabId:tab
+			});
+		},
 		// Status update
-		updateStatus=async ()=>{
+		updateStatus=async (fromError)=>{
 				// Active tab
-			const tab=(await api.tabs.query({active:true,currentWindow:true}))[0],
-				// Manage the active tab?
-				manage=tab&&rxHttp.test(tab.url.toLowerCase());
-			if(!manage){
+			const tab=await currentTab();
+			if(!rxHttp.test(tab.url.toLowerCase())){
 				// Inactive
-				statusElement.innerText='inactive';
-				statusElement.className='inactive';
+				setStatus('inactive',true,tab.id);
 				setTimeout(updateStatus,500);
 				return;
 			}
 			try{
 				// Send the status message
 				await api.tabs.sendMessage(tab.id,{type:'status'},(status)=>{
-					// Set the status and start the status update timeout 
-					statusElement.innerText=status;
-					statusElement.className=status;
+					// Set the status and start the status update timeout
+					setStatus(status,true,tab.id);
 					setTimeout(updateStatus,500);
 				});
 			}catch(ex){
-				// Act as inactive and stop status updates on error
-				console.error('Failed to request LSC plugin status',ex);
-				statusElement.innerText='inactive';
-				statusElement.className='inactive';
+				// Act as inactive
+				if(!fromError) console.error('Failed to request LSC plugin status',ex,fromError);
+				setStatus('inactive',!fromError,tab.id);
+				setTimeout(()=>updateStatus(true),500);
 			}
-		};
+		},
+		// Set a status
+		setStatus=(status,icon,tab)=>{
+			statusElement.innerText=api.i18n.getMessage(status+'Info');
+			statusElement.className=status;
+			if(icon) changeIcon('-'+status,tab);
+		},
+		// Plugin settings
+		settings=await api.storage.sync.get(settingsKeys);
 	// Pre-set options
-	document.getElementById('session').checked=await api.storage.sync.get({session:defaultSettings.session}).session;
+	document.getElementById('session').checked=settings.session;
+	document.getElementById('refreshDaily').checked=settings.refreshDaily;
 	// Manage the active tab
-	await manageTab((await api.tabs.query({active:true,currentWindow:true}))[0]);
+	await manageTab(true);
 	// Manage the active tab when options changed
 	for(let id of optionsKeys)
-		document.getElementById(id).addEventListener(
-			'change',
-			async ()=>await manageTab((await api.tabs.query({active:true,currentWindow:true}))[0])
-			);
+		document.getElementById(id).addEventListener('change',manageTab);
+	// Reload when the user clicked the disable button
+	document.getElementById('disable').addEventListener(
+		'click',
+		async ()=>{
+			await api.tabs.sendMessage((await api.tabs.query({active:true,currentWindow:true}))[0].id,{type:'disable'});
+			close();
+		}
+		);
+	// Clear the cache when the user clicked the "Clear cache" button
+	document.getElementById('clear').addEventListener(
+		'click',
+		async ()=>{
+			await api.tabs.sendMessage((await api.tabs.query({active:true,currentWindow:true}))[0].id,{type:'clear'});
+			alert(api.i18n.getMessage('cacheCleared'));
+		}
+		);
 	// Close the popup when the user clicked the close button
 	document.getElementById('close').addEventListener('click',()=>close());
+	// Translate the page
+	i18n_translate();
 	// Get the current status
 	await updateStatus();
 });

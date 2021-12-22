@@ -1,0 +1,82 @@
+{
+	"extensionDescription": {
+		"message": "Browse websites faster by pre-fetching linked contents into a localStorage cache while you're reading",
+		"description": "A short description of the extension"
+	},
+	"cacheCleared": {
+		"message": "The cache is fresh.",
+		"description": "Message when the cache has been cleared"
+	},
+	"inactiveInfo": {
+		"message": "inactive",
+		"description": "Status information when the extension is inactive"
+	},
+	"loadingInfo": {
+		"message": "loading",
+		"description": "Status information when the extension is loading"
+	},
+	"activeInfo": {
+		"message": "active",
+		"description": "Status information when the extension is active"
+	},
+	"options": {
+		"message": "options",
+		"description": "The term \"options\" at the end of a heading sentence"
+	},
+	"preFetchSummary": {
+		"message": "Pre-fetch linked contents of a handled website",
+		"description": "Summary of the pre-fetch option"
+	},
+	"preFetchDetails": {
+		"message": "Pre-fetching means LSC will try to find all linked contents and load their HTML from the server before you even clicked the link. This results in a very fast browsing experience, but may produce some overhead, if contents from links that you never visit is being loaded.",
+		"description": "Details of the pre-fetch option"
+	},
+	"sessionSummary": {
+		"message": "Use the sessionStorage instead of the localStorage",
+		"description": "Session option summary"
+	},
+	"sessionDetails":{
+		"message": "Using the session storage for cached contents will avoid storing sensitive information from a website. The session storage cache will be deleted as soon as you close the window (or tab) - it's a kind of private mode for the LSC cache.",
+		"description": "Session option details"
+	},
+	"refreshDailySummary":{
+		"message": "Refresh the cache daily (instead for each session)",
+		"description": "Daily refresh option summary"
+	},
+	"refreshDailyDetails":{
+		"message": "Activate the daily refresh to keep cached contents for one day. Per default cached contents would be cleared every time you visit the website again.",
+		"description": "Daily refresh option details"
+	},
+	"resources":{
+		"message": "Resources",
+		"description": "Resources heading"
+	},
+	"gitHubProject":{
+		"message": "GitHub project site",
+		"description": "GitHub project site link description"
+	},
+	"gitHubProjectInfo":{
+		"message": "with instructions for permanent use on your own website and more",
+		"description": "GitHub project site link description (outside of the link)"
+	},
+	"status":{
+		"message": "Status:",
+		"description": "Status label"
+	},
+	"inactiveText":{
+		"message": "Use this plugin while you're on a website that you'd like to browse faster. Supported contents are HTML and XHTML.",
+		"description": "Text being displayed in the popup when LSC can't run with the active browser tab'"
+	},
+	"disableValue":{
+		"message": "Disable LSC",
+		"description": "Disable LSC button label"
+	},
+	"clearValue":{
+		"message": "Clear cache",
+		"description": "Clear LSC cache button label"
+	},
+	"closeValue":{
+		"message": "Close popup",
+		"description": "Close popup button label"
+	}
+}

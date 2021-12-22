@@ -1,39 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<link rel="stylesheet" href="/css/shared.css">
 <script src="/js/shared.js"></script>
 <script src="/js/options.js"></script>
-<style>
-:root{
-	--bg-color:white;
-	--color:black;
-}
-@media (prefers-color-scheme: dark){
-	:root{
-		--bg-color:rgb(4,3,3);
-		--color:rgb(161,51,51);
-	}
-}
-body{
-	background-color:var(--bg-color);
-	color:var(--color);
-}
-summary{
-	white-space:nowrap;
-}
-</style>
+<script src="/js/html-i18n.min.js"></script>
 </head>
 <body>
-<h1>LSC - JavaScript <code>localStorage</code> Cache options</h1>
+<h1>LSC - JavaScript <code>localStorage</code> Cache <span data-i18ntext="options">options</span></h1>
 <form>
-<details><summary><label for="prefetch"><input type="checkbox" id="prefetch" name="prefetch"> Pre-fetch linked contents of a handled website</label></summary>
-Pre-fetching means LSC will try to find all linked contents and load their HTML from the server before you even clicked the link. This results in a very fast browsing experience, but may produce some overhead, if contents from links that you never visit is being loaded.</details>
-<details><summary><label for="session"><input type="checkbox" id="session" name="session"> Use the <code>sessionStorage</code> instead of the <code>localStorage</code></label></summary>
-Using the session storage for cached contents will avoid storing sensitive information from a website. The session storage cache will be deleted as soon as you close the window (or tab) - it's a kind of private mode for the LSC cache.</details>
+<details><summary><label for="prefetch"><input type="checkbox" id="prefetch" name="prefetch"> <span data-i18ntext="preFetchSummary">Pre-fetch linked contents of a handled website</span></label></summary>
+<span data-i18ntext="preFetchDetails">Pre-fetching means LSC will try to find all linked contents and load their HTML from the server before you even clicked the link. This results in a very fast browsing experience, but may produce some overhead, if contents from links that you never visit is being loaded.</span></details>
+<details><summary><label for="session"><input type="checkbox" id="session" name="session"> <span data-i18ntext="sessionSummary">Use the sessionStorage instead of the localStorage</span></label></summary>
+<span data-i18ntext="sessionDetails">Using the session storage for cached contents will avoid storing sensitive information from a website. The session storage cache will be deleted as soon as you close the window (or tab) - it's a kind of private mode for the LSC cache.</span></details>
+<details><summary><label for="refreshDaily"><input type="checkbox" id="refreshDaily" name="refreshDaily"> <span data-i18ntext="refreshDailySummary">Refresh the cache daily (instead for each session)</span></label></summary>
+<span data-i18ntext="refreshDailyDetails">Activate the daily refresh to keep cached contents for one day. Per default cached contents would be cleared every time you visit the website again.</span></details>
 </form>
-<h2>Resources</h2>
+<h2 data-i18ntext="resources">Resources</h2>
 <ul>
-<li><a href="https://github.com/nd1012/LSC" target="_blank">GitHub project site</a>
+<li><a href="https://github.com/nd1012/LSC" target="_blank" data-i18ntext="gitHubProject">GitHub project site</a> <span data-i18ntext="gitHubProjectInfo">with instructions for permanent use on your own website and more</span>
 </ul>
 </body>
 </html>

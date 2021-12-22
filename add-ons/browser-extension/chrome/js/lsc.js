@@ -64,7 +64,7 @@ if(typeof window.LSC=='undefined'){
 		// Determine if an URI is excluded
 		const isExcluded=(uri)=>{
 			if(!LSC.exclude.length) return false;
-			for(let ex in LSC.exclude)
+			for(let ex of LSC.exclude)
 				if(ex instanceof RegEx){
 					if(ex.test(uri)) return true;
 				}else if(uri.substring(0,ex.length)==ex){
@@ -76,7 +76,7 @@ if(typeof window.LSC=='undefined'){
 		// Determine if an URI is included (can override an exclude)
 		const isIncluded=(uri)=>{
 			if(!LSC.include.length) return false;
-			for(let ex in LSC.include)
+			for(let ex of LSC.include)
 				if(ex instanceof RegEx){
 					if(ex.test(uri)) return true;
 				}else if(uri.substring(0,ex.length)==ex){
@@ -256,8 +256,8 @@ if(typeof window.LSC=='undefined'){
 					rawCt=res.headers.get('Content-Type').trim(),
 					// Response MIME type
 					ct=rawCt.toLowerCase(),
-					// Is the response MIME type ok (HTML and XHTML are allowed)?
-					valid=ct.substring(0,9)=='text/html'||ct.substring(0,21)=='application/xhtml+xml';
+					// Is the response MIME type ok?
+					valid=LSC.isContentSupported(ct),
 					// HTML of the URI
 					html=await res.text(),
 					// Event data
@@ -329,6 +329,7 @@ if(typeof window.LSC=='undefined'){
 		
 		// Store the cache
 		this.store=(notClear)=>{
+			if(!LSC.options.enable) return cache;// Don't store when disabled'
 			try{
 				if(!LSC.options.quiet) console.trace('Store LSC cache',notClear);
 				LSC.events.dispatchEvent(new CustomEvent('store',{detail:{cache:cache}}));
@@ -348,7 +349,7 @@ if(typeof window.LSC=='undefined'){
 		};
 	
 		// Construction code
-		if(!LSC.options.quiet) console.log('LSC initializing',LSC.VERSION,key,version,preFetch,LSC.options.isPlugin);
+		if(!LSC.options.quiet) console.log('LSC initializing',LSC.VERSION(),key,version,preFetch,LSC.options.isPlugin);
 		if(!cache||(version&&cache.get('version')<+version)) this.clear(version);// Ensure a valid cache (clear, if the site version increased)
 		document.body.addEventListener('beforeunload',this.store);// Store the cache when leaving this site
 		history.replaceState('LSC0',document.title,document.location.href);// Required to manage the history entry of the initial page
@@ -379,6 +380,15 @@ if(typeof window.LSC=='undefined'){
 		return this;
 	};
 	
+	// Determine if a content MIME type is supported
+	LSC.isContentSupported=(mime)=>{
+		mime=mime.toLowerCase();
+		for(let type of LSC.mimeTypes)
+			if(mime.substring(0,type.length)==type)
+				return true;
+		return false;
+	};
+	
 	// Singleton instance
 	LSC.instance=null;
 	
@@ -390,6 +400,9 @@ if(typeof window.LSC=='undefined'){
 	
 	// Supported URI extensions
 	LSC.extensions=['html','htm','php'];
+	
+	// Supported content MIME types
+	LSC.mimeTypes=['text/html','application/xhtml+xml'];
 	
 	// Excluded URIs or regular expressions
 	LSC.exclude=[];
@@ -418,5 +431,5 @@ if(typeof window.LSC=='undefined'){
 	};
 	
 	// LSC version
-	LSC.VERSION=3;// Please don't change the value!
+	LSC.VERSION=()=>3;
 }

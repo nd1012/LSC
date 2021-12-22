@@ -2,7 +2,6 @@
 async function loadSettings(){
 		// Options or default settings
 	const settings=Object.assign({},defaultSettings,await api.storage.sync.get(settingsKeys));
-	console.log(settings);
 	// Check chosen options
 	for(let [id,] of Object.entries(settings).filter((i)=>i[1]))
 		document.getElementById(id).setAttribute('checked','checked');
@@ -28,4 +27,6 @@ window.addEventListener('load',async ()=>{
 	// Store options as soon as an option has been changed
 	for(let id of settingsKeys)
 		document.getElementById(id).addEventListener('change',async ()=>await storeSettings());
+	// Translate the page
+	i18n_translate();
 });

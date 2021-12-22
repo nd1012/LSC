@@ -1,0 +1,82 @@
+{
+	"extensionDescription": {
+		"message": "Webseiten schneller bedienen, durch Vorladen verlinkter Inhalte in den localStorage Cache, während Sie lesen",
+		"description": "A short description of the extension"
+	},
+	"cacheCleared": {
+		"message": "Der Cache wurde geleert.",
+		"description": "Message when the cache has been cleared"
+	},
+	"inactiveInfo": {
+		"message": "inaktiv",
+		"description": "Status information when the extension is inactive"
+	},
+	"loadingInfo": {
+		"message": "lade...",
+		"description": "Status information when the extension is loading"
+	},
+	"activeInfo": {
+		"message": "aktiv",
+		"description": "Status information when the extension is active"
+	},
+	"options": {
+		"message": "Optionen",
+		"description": "The term \"options\" at the end of a heading sentence"
+	},
+	"preFetchSummary": {
+		"message": "Verlinkte Inhalte Vorladen",
+		"description": "Summary of the pre-fetch option"
+	},
+	"preFetchDetails": {
+		"message": "Vorladen bedeutet, dass LSC alle verlinkten Inhalte finden und deren HTML Vorladen wird, während Sie lesen, und bevor Sie auf einen Link klicken. Das resultiert in einer flüssigeren Navigation auf der Webseite, produziert jedoch auch mehr Datenverkehr als nötig, weil unter Umständen Inhalte geladen werden, welche Sie nie lesen.",
+		"description": "Details of the pre-fetch option"
+	},
+	"sessionSummary": {
+		"message": "sessionStorage anstelle von localStorage nutzen",
+		"description": "Session option summary"
+	},
+	"sessionDetails":{
+		"message": "Nutzen Sie den Session-Speicher, um zu verhindern, dass sensible Informationen permanent zwischengespeichert werden. Der Session-Speicher wird gelöscht, sobald Sie das Browser Tab schließen - es ist eine Art \"privater Modus\" for den LSC Zwischenspeicher.",
+		"description": "Session option details"
+	},
+	"refreshDailySummary":{
+		"message": "Speicher täglich erneuern (anstelle für jede Session)",
+		"description": "Daily refresh option summary"
+	},
+	"refreshDailyDetails":{
+		"message": "Aktivieren Sie Option, um Inhalte für einen Tag zu speichern. Im Standard würde der LSC Zwischenspeicher geleert, sobald Sie die Webseite erneut besuchen.",
+		"description": "Daily refresh option details"
+	},
+	"resources":{
+		"message": "Ressourcen",
+		"description": "Resources heading"
+	},
+	"gitHubProject":{
+		"message": "GitHub Project",
+		"description": "GitHub project site link description"
+	},
+	"gitHubProjectInfo":{
+		"message": "mit einer Anleitung zur Nutzung mit der eigenen Webseite, und mehr",
+		"description": "GitHub project site link description (outside of the link)"
+	},
+	"status":{
+		"message": "Status:",
+		"description": "Status label"
+	},
+	"inactiveText":{
+		"message": "Nutzen Sie diese Erweiterung, um die Webseite, die Sie besuchen, schneller zu bedienen. Unterstützte Inhalte sind HTML und XHTML.",
+		"description": "Text being displayed in the popup when LSC can't run with the active browser tab'"
+	},
+	"disableValue":{
+		"message": "LSC deaktivieren",
+		"description": "Disable LSC button label"
+	},
+	"clearValue":{
+		"message": "Speicher leeren",
+		"description": "Clear LSC cache button label"
+	},
+	"closeValue":{
+		"message": "Popup schließen",
+		"description": "Close popup button label"
+	}
+}

@@ -1,6 +1,7 @@
 {
+	"default_locale": "en",
     "name": "LSC - JavaScript localStorage Cache",
-    "description": "Browse websites faster by pre-fetching linked contents into a localStorage cache while you're reading",
+    "description": "__MSG_extensionDescription__",
     "version": "1.0.0",
     "manifest_version": 3,
     "icons": {
@@ -8,6 +9,9 @@
         "32": "/img/icon-32x32.png",
         "48": "/img/icon-48x48.png",
         "128": "/img/icon-128x128.png"
+    },
+    "background": {
+    	"service_worker": "/js/service.js"
     },
     "action": {
         "default_popup": "/html/popup.html",

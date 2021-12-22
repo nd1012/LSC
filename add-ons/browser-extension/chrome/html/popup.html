@@ -1,26 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<script src="/js/shared.js"></script>
-<script src="/js/popup.js"></script>
+<link rel="stylesheet" href="/css/shared.css">
 <style>
-:root{
-	--bg-color:white;
-	--color:black;
-}
-@media (prefers-color-scheme: dark){
-	:root{
-		--bg-color:rgb(4,3,3);
-		--color:rgb(161,51,51);
-	}
-}
 body{
 	min-width:200px;
-	background-color:var(--bg-color);
-	color:var(--color);
-}
-summary{
-	white-space:nowrap;
 }
 #status{
 	font-weight:bold;
@@ -43,20 +27,25 @@ summary{
 	color:white;
 }
 </style>
+<script src="/js/shared.js"></script>
+<script src="/js/popup.js"></script>
+<script src="/js/html-i18n.min.js"></script>
 </head>
 <body>
 <h1>LSC</h1>
-<p>Status: <span id="status"></span></p>
+<p><span data-i18ntext="status">Status:</span> <span id="status"></span></p>
 <form>
-<p>Browse websites faster by pre-fetching linked contents into a <code>localStorage</code> cache while you're reading</p>
+<p data-i18ntext="extensionDescription">Browse websites faster by pre-fetching linked contents into a localStorage cache while you're reading</p>
 <div id="website">
-<details><summary><label for="session"><input type="checkbox" id="session" name="session"> Use <code>sessionStorage</code></label></summary>
-Using the session storage for cached contents will avoid storing sensitive information from a website for permanent.</details>
+<details><summary><label for="session"><input type="checkbox" id="session" name="session"> <span data-i18ntext="sessionSummary">Use the sessionStorage instead of the localStorage</span></label></summary>
+<span data-i18ntext="sessionDetails">Using the session storage for cached contents will avoid storing sensitive information from a website. The session storage cache will be deleted as soon as you close the window (or tab) - it's a kind of private mode for the LSC cache.</span></details>
+<details><summary><label for="refreshDaily"><input type="checkbox" id="refreshDaily" name="refreshDaily"> <span data-i18ntext="refreshDailySummary">Refresh the cache daily (instead for each session)</span></label></summary>
+<span data-i18ntext="refreshDailyDetails">Activate the daily refresh to keep cached contents for one day. Per default cached contents would be cleared every time you visit the website again.</span></details>
 </div>
 <div id="nowebsite" hidden="hidden">
-<p>Use this plugin while you're on a website that you'd like to browse faster.</p>
+<p data-i18ntext="inactiveText">Use this plugin while you're on a website that you'd like to browse faster. Supported contents are HTML and XHTML.</p>
 </div>
-<p align="right"><input type="button" id="close" value="Close"></p>
+<p align="right"><input type="button" id="disable" value="Disable LSC" data-i18ntext="disable"> <input type="button" id="clear" value="Clear cache" data-i18ntext="clear"> <input type="button" id="close" value="Close popup" data-i18ntext="close"></p>
 </form>
 </body>
 </html>

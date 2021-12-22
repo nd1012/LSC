@@ -13,7 +13,8 @@ const api=(()=>{
 // Default settings
 const defaultSettings={
 	prefetch:true,
-	session:false
+	session:false,
+	refreshDaily:false
 };
 
 // Settings keys
