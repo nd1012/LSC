@@ -19,6 +19,7 @@ jobs:
 
       - name: Delete not required files
         run: | 
+          rm -f ${GITHUB_WORKSPACE}/add-ons/browser-extension/chrome/css/*.min.css
           rm -f ${GITHUB_WORKSPACE}/add-ons/browser-extension/chrome/js/*.min.js
 
       - name: Update files from external sources

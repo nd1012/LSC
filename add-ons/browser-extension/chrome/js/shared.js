@@ -1,19 +1,13 @@
 // Browser API
-const api=(()=>{
-	switch(true){
-		case typeof chrome!='undefined':
-			return chrome;
-		case typeof msBrowser!='undefined':
-			return msBrowser;
-		default:
-			return browser;
-	}
-})();
+const api=chrome||msBrowser||browser;
 
 // Default settings
 const defaultSettings={
+	// Pre-fetch linked contents
 	prefetch:true,
+	// Use sessionStorage
 	session:false,
+	// Daily cache refresh
 	refreshDaily:false
 };
 
