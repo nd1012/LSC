@@ -24,7 +24,7 @@ jobs:
 
       - name: Update files from external sources
         run: |
-          wget -v -O ${GITHUB_WORKSPACE}/add-ons/browser-extension/chrome/js/html-i18n.min.js https://raw.githubusercontent.com/nd1012/HTML-i18n/main/src/html-i18n.min.js
+          wget -v -O ${GITHUB_WORKSPACE}/add-ons/browser-extension/chrome/js/html-i18n.js https://raw.githubusercontent.com/nd1012/HTML-i18n/main/src/html-i18n.js
         
       - name: Finalize WordPress plugin
         run: |
