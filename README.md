@@ -385,6 +385,8 @@ The same problem exists with the `beforeunload` and `unload` DOM events. Here yo
 
 For websites that rely heavy on JavaScript that depends on the normal page initialization events the browser sends usually, LSC may not be a solution, if you can't manage to modify the event handling :(
 
+Another trap are some techniques to block crawlers (LSC act like a crawler on Speed), which would result the server in responsing with an error status, because LSC sent too many requests within a short time. LSC tries to catch this by not caching responded contents with an error http status code. A solution for this problem could be tracking the mouse cursor and pre-fetching only links that the user may click soon - if the website/server/connection isn't too slow in general.
+
 ## Use `sessionStorage` instead of `localStorage`
 
 The `localStorage` isn't good for storing sensitive data, but the `sessionStorage` will be deleted, as soon as the window (tab) closes. If you prefer to use the `sessionStorage` instead of the `localStorage`, you can set to use the `sessionStorage` on startup:
@@ -461,10 +463,11 @@ Have a look at the [add-ons index](add-ons/) for more fun with LSC!
 
 - [ ] Prediction engine extension: Pre-fetch only contents of links that the user may click soon (predicted from the mouse actions)
 - [ ] Browser extension: For using LSC with any website on demand
-	- [x] Chrome extension
-	- [x] Edge extension
+	- [x] Chrominum extension
 	- [ ] Firefox extension (waiting for manifest version 3 to be supported)
 	- [ ] Safari extension
-- [ ] Inspector: Find possible issues with a website when using LSC
-	- [ ] Find `load`, `DOMContentLoaded` and `readystatechanged` event handlers
-	- [ ] No (or only a few) manageable links (compared to the number of unmanageable links)
+- [x] Inspector: Find possible issues with a website when using LSC
+	- [x] Find `load`, `DOMContentLoaded` and `readystatechanged` event handlers
+	- [x] No (or only a few) manageable links (compared to the number of unmanageable links)
+- [x] Update current page option for the browser extension
+- [ ] Browser cache API support

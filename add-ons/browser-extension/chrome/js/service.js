@@ -1,7 +1,11 @@
 importScripts('/js/shared.js');
+console.debug('LSC plugin service initializing');
 
 // Update the extension icon based on the current tab status
-api.runtime.onMessage.addListener((status,sender)=>{
+api.runtime.onMessage.addListener((message,sender,respond)=>{
+	if(message.type!='status') return;
+		// Status
+	var status=message.status;
 	if(status!='') status='-'+status;// Default icon
 	api.action.setIcon({
 		path:{
@@ -12,4 +16,7 @@ api.runtime.onMessage.addListener((status,sender)=>{
 		},
 		tabId:parseInt(sender.tab.id)
 	});
+	respond(false);
 });
+
+console.debug('LSC plugin service initialized');

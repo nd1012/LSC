@@ -68,15 +68,23 @@
 		"description": "Text being displayed in the popup when LSC can't run with the active browser tab'"
 	},
 	"disableValue":{
-		"message": "Disable LSC",
+		"message": "Disable",
 		"description": "Disable LSC button label"
 	},
 	"clearValue":{
 		"message": "Clear cache",
 		"description": "Clear LSC cache button label"
 	},
+	"updateValue":{
+		"message": "Update page",
+		"description": "Update LSC cache for the current page button label"
+	},
+	"updateFailed": {
+		"message": "The update of the current page failed :(",
+		"description": "Message to the user when updating the current page failed"
+	},
 	"closeValue":{
-		"message": "Close popup",
+		"message": "Close",
 		"description": "Close popup button label"
 	}
 }

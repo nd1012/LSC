@@ -24,7 +24,7 @@
 		"description": "The term \"options\" at the end of a heading sentence"
 	},
 	"preFetchSummary": {
-		"message": "Verlinkte Inhalte Vorladen",
+		"message": "Verlinkte Inhalte vorladen",
 		"description": "Summary of the pre-fetch option"
 	},
 	"preFetchDetails": {
@@ -40,7 +40,7 @@
 		"description": "Session option details"
 	},
 	"refreshDailySummary":{
-		"message": "Speicher täglich erneuern (anstelle für jede Session)",
+		"message": "Speicher täglich erneuern (anstatt für jede Session)",
 		"description": "Daily refresh option summary"
 	},
 	"refreshDailyDetails":{
@@ -68,15 +68,23 @@
 		"description": "Text being displayed in the popup when LSC can't run with the active browser tab'"
 	},
 	"disableValue":{
-		"message": "LSC deaktivieren",
+		"message": "Deaktivieren",
 		"description": "Disable LSC button label"
 	},
 	"clearValue":{
 		"message": "Speicher leeren",
 		"description": "Clear LSC cache button label"
 	},
+	"updateValue":{
+		"message": "Seite aktualisieren",
+		"description": "Update LSC cache for the current page button label"
+	},
+	"updateFailed": {
+		"message": "Die aktuelle Seite konnte nicht aktualisiert werden :(",
+		"description": "Message to the user when updating the current page failed"
+	},
 	"closeValue":{
-		"message": "Popup schließen",
+		"message": "Schließen",
 		"description": "Close popup button label"
 	}
 }

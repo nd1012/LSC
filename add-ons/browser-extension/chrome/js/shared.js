@@ -13,3 +13,9 @@ const defaultSettings={
 
 // Settings keys
 const settingsKeys=Object.keys(defaultSettings);
+
+// Page settings keys
+const pageSettingsKeys=[
+	'session',
+	'refreshDaily'
+];
