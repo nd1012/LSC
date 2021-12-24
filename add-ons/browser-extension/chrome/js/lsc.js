@@ -22,22 +22,33 @@ if(typeof window.LSC=='undefined'){
 		
 		// Constants
 			// Regular expression to match a link URI to manage
-		const rx=new RegExp('^[^\:]+\:\/\/'+document.location.hostname.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(\/.*)?$','i'),
+		const rx=new RegExp('^https?\:\/\/'+document.location.hostname.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(\/.*)?$','i'),
 			// Regular expression to match the file extension from an URI
-			extRx=/^.+([^\/]+|\.([^\.|\/]+))$/;
+			extRx=/^.+(\.([^\.|\/]+))$/,
+			// Is from the browser extension?
+			isPlugin=LSC.options.isPlugin,
+			// Regular expression to match the https protocol in an URI
+			httpsRx=/^https\:/i,
+			// Require httpS URIs?
+			requireHttps=httpsRx.test(location.href);
 		
 		// Prepare the cache
 		if(typeof key=='undefined'||key==null) key=document.location.hostname;
 			// Cache
-		var cache=typeof (LSC.options.useSessionStorage?sessionStorage:localStorage).getItem(key)=='string'
-				?new Map(JSON.parse((LSC.options.useSessionStorage?sessionStorage:localStorage).getItem(key)))
-				:null,
+		var cache=null,
 			// History index
 			historyIndex=0,
 			// Session storage?
 			useSessionStorage=LSC.options.useSessionStorage,
 			// Concurrent fetch-actions
 			fetching=new Map();
+		if(localStorage.getItem(key)!=null){
+			cache=new Map(JSON.parse(localStorage.getItem(key)));
+			console.debug('Found existing LSC cache in local storage',cache.get('version'),cache.keys());
+		}else if(sessionStorage.getItem(key)!=null){
+			cache=new Map(JSON.parse(sessionStorage.getItem(key)));
+			console.debug('Found existing LSC cache in session storage',cache.get('version'),cache.keys());
+		}
 		
 		// Handle a link click
 		const click=async (e)=>{
@@ -104,9 +115,10 @@ if(typeof window.LSC=='undefined'){
 					(
 						a.href.indexOf('?')<0&&// No GET parameters
 						a.href.indexOf('#')<0&&// No anchor
+						(!requireHttps||httpsRx.test(a.href))&&// https not required, or the URI is a https URI
 						rx.test(a.href)&&// URI of the current domain
 						(
-							!extRx.test(a.href)||// Path without filename
+							(!extRx.test(a.href)&&a.href[a.href.length-1]=='/')||// Path without filename
 							extensions.indexOf(a.href.replace(extRx,"$2"))>-1// File extension is supported
 						)&&
 						!isExcluded(a.href)// Not excluded
@@ -134,9 +146,8 @@ if(typeof window.LSC=='undefined'){
 						!a.hasAttribute('data-noprefetch')// Pre-fetch not denied for the link
 						){
 						a.setAttribute('data-lscprefetched',now);
-						self.get(a.href).then((res)=>{
-							if(typeof res!='string')
-								a.setAttribute('data-lscprefetched',a.getAttribute('data-lscprefetched')+' (failed)');
+						self.get(a.href,undefined,undefined,true).then((res)=>{
+							if(res!==true) a.setAttribute('data-lscprefetched',a.getAttribute('data-lscprefetched')+' (failed)');
 						});
 					}
 				}
@@ -173,6 +184,9 @@ if(typeof window.LSC=='undefined'){
 			self.store(true);
 			return self;
 		};
+		
+		// Get if this instance comes from the browser extension
+		this.getIsPlugin=()=>isPlugin;
 		
 		// Navigate to an URI
 		this.navigate=async (uri,noState,index)=>{
@@ -221,21 +235,20 @@ if(typeof window.LSC=='undefined'){
 				// Execute the body onload script, if exists
 					// Document body
 				const body=document.querySelector('body');
-				if(body&&body.hasAttribute('onload'))
-					new Function('event',body.getAttribute('onload'))(new Event('load'));
+				if(body&&body.hasAttribute('onload')) new Function('event',body.getAttribute('onload'))(new Event('load'));
 			}
 			LSC.events.dispatchEvent(new CustomEvent('navigated',{detail:{uri:uri,noState:noState,oldUri:oldUri,history:historyIndex}}));
 			return true;
 		};
 		
 		// Fetch an URI and update the cache
-		this.update=async (uri,priority,ignoreMime)=>{
+		this.update=async (uri,priority,ignoreMime,getSuccess)=>{
 			console.debug('Update LSC cache for "'+uri+'"',priority,ignoreMime);
 			// Avoid double-fetching
 			if(!priority&&fetching.has(uri)){
 				console.debug('LSC avoid double-fetching "'+uri+'"');
 				await fetching.get(uri);
-				return cache.get(uri);
+				return getSuccess?cache.has(uri):cache.get(uri);
 			}
 			// Avoid too many concurrent fetch-actions
 				// If we had to pause because of too many concurrent fetch-actions
@@ -262,6 +275,9 @@ if(typeof window.LSC=='undefined'){
 					html=await res.text(),
 					// Event data
 					e=new CustomEvent('update',{detail:{uri:uri,html:html,response:res,priority:!!priority,ignoreMime:!!ignoreMime}});
+					// Had a problem when fetching?
+				var hadProblem=res.status>399;
+				if(hadProblem) console.warn('Received http status code #'+res.status+' (will not cache)',res);
 				if(!valid&&!ignoreMime){
 					// Raise a warning on invalid response MIME type
 					console.warn('LSC received an invalid response MIME type for "'+uri+'"',uri,ct,res,e);
@@ -274,7 +290,7 @@ if(typeof window.LSC=='undefined'){
 					if(ed.detail.cancel){
 						// Return the old cache content
 						console.debug('Invalid MIME type response handling from "'+uri+'" has been disabled by LSC event handler',ed);
-						return cache.get(uri);
+						return getSuccess?false:cache.get(uri);
 					}
 				}
 				LSC.events.dispatchEvent(e);
@@ -283,24 +299,30 @@ if(typeof window.LSC=='undefined'){
 					console.warn('LSC failed to fetch HTML from "'+uri+'"',e);
 					if(LSC.debugOnError) debugger;
 					LSC.events.dispatchEvent(new CustomEvent('error',{detail:{uri:uri,html:e.detail.html}}));
-					return cache.get(uri);
+					return getSuccess?false:cache.get(uri);
 				}
-				cache.set(uri,e.detail.html);
-				if(LSC.options.maxEntries&&cache.size>LSC.options.maxEntries+1){
-					// Unshift the cached entries to fit the max. number of cached entries
-					let keys=cache.keys();
-					keys.next();// Skip the version number key, which is the first key always!
-					cache.delete(keys.next().value);
+				if(!hadProblem){
+					// Store the response in the cache
+					cache.set(uri,e.detail.html);
+					if(LSC.options.maxEntries&&cache.size>LSC.options.maxEntries+1){
+						// Unshift the cached entries to fit the max. number of cached entries
+						let keys=cache.keys();
+						keys.next();// Skip the version number key, which is the first key always!
+						cache.delete(keys.next().value);
+					}
+				}else if(cache.has(uri)){
+					// Use the old cached version in case the server responded with an error status code
+					e.detail.html=cache.get(uri);
 				}
 				LSC.events.dispatchEvent(new CustomEvent(
 					'updated',
 					{detail:{uri:uri,html:e.detail.html,priority:!!priority,ignoreMime:!!ignoreMime}}
 					));
-				return e.detail.html;
+				return getSuccess?!hadProblem:e.detail.html;
 			}catch(ex){
 				console.error('Error updating LSC cache for "'+uri+'"',ex);
 				if(LSC.debugOnError) debugger;
-				return cache.get(uri);
+				return getSuccess?false:cache.get(uri);
 			}finally{
 				if(!priority){
 					// Ensure the fetch-task is completed before returning
@@ -312,7 +334,7 @@ if(typeof window.LSC=='undefined'){
 		}
 		
 		// Get an URI from the cache or fetch the URI and update the cache
-		this.get=async (uri,priority,ignoreMime)=>cache.has(uri)?cache.get(uri):await self.update(uri,priority,ignoreMime);
+		this.get=async (uri,priority,ignoreMime,getSuccess)=>cache.has(uri)?cache.get(uri):await self.update(uri,priority,ignoreMime,getSuccess);
 		
 		// Clear the cache
 		this.clear=(version)=>{
@@ -349,7 +371,7 @@ if(typeof window.LSC=='undefined'){
 		};
 	
 		// Construction code
-		if(!LSC.options.quiet) console.log('LSC initializing',LSC.VERSION(),key,version,preFetch,LSC.options.isPlugin);
+		if(!LSC.options.quiet) console.log('LSC initializing',LSC.VERSION(),key,version,preFetch,isPlugin);
 		if(!cache||(version&&cache.get('version')<+version)) this.clear(version);// Ensure a valid cache (clear, if the site version increased)
 		document.body.addEventListener('beforeunload',this.store);// Store the cache when leaving this site
 		history.replaceState('LSC0',document.title,document.location.href);// Required to manage the history entry of the initial page
@@ -383,9 +405,7 @@ if(typeof window.LSC=='undefined'){
 	// Determine if a content MIME type is supported
 	LSC.isContentSupported=(mime)=>{
 		mime=mime.toLowerCase();
-		for(let type of LSC.mimeTypes)
-			if(mime.substring(0,type.length)==type)
-				return true;
+		for(let type of LSC.mimeTypes) if(mime.substring(0,type.length)==type) return true;
 		return false;
 	};
 	
@@ -431,5 +451,5 @@ if(typeof window.LSC=='undefined'){
 	};
 	
 	// LSC version
-	LSC.VERSION=()=>3;
+	LSC.VERSION=()=>4;
 }
